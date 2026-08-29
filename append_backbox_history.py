@@ -20,6 +20,9 @@ réelle (cas typique des grades "Non fonctionnel").
 import json
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+PARIS = ZoneInfo("Europe/Paris")
 
 HERE = Path(__file__).parent
 DASHBOARD_DATA = HERE / "dashboard_data.json"
@@ -41,7 +44,14 @@ def main():
         if markets:
             listings[r["sku"]] = markets
 
-    line = {"ts": datetime.now().isoformat(timespec="seconds"), "w": listings}
+    # datetime.now() sur le runner GitHub Actions renvoie l'heure UTC, pas Paris
+    # (contrairement au Mac local d'avant) -> conversion explicite indispensable,
+    # sinon toutes les heures de "Historique BackBox" seraient décalées de 1-2h.
+    # tzinfo retiré après conversion : le format "YYYY-MM-DDTHH:MM:SS" naïf (sans
+    # suffixe +02:00) est celui attendu partout ailleurs dans le pipeline (découpage
+    # de chaîne pour l'heure/le jour, ex: ts[:13], ts.slice(11,16)).
+    now_paris = datetime.now(PARIS).replace(tzinfo=None)
+    line = {"ts": now_paris.isoformat(timespec="seconds"), "w": listings}
     with open(HISTORY, "a", encoding="utf-8") as f:
         f.write(json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n")
 

@@ -9,6 +9,9 @@ localement, sans dépendre du contexte d'une session Claude.
 import os
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+PARIS = ZoneInfo("Europe/Paris")
 
 HERE = Path(__file__).parent
 
@@ -29,7 +32,9 @@ def main():
     html = (HERE / "combined_template.html").read_text(encoding="utf-8")
     for placeholder, path in PLACEHOLDERS.items():
         html = html.replace(placeholder, path.read_text(encoding="utf-8"))
-    html = html.replace("__BUILT_AT__", datetime.now().strftime("%d/%m/%Y à %H:%M"))
+    # datetime.now() sur le runner GitHub Actions renvoie l'heure UTC -> conversion
+    # explicite indispensable (le Mac local d'avant donnait l'heure de Paris nativement).
+    html = html.replace("__BUILT_AT__", datetime.now(PARIS).strftime("%d/%m/%Y à %H:%M"))
 
     remaining = [p for p in PLACEHOLDERS if p in html]
     if remaining:
