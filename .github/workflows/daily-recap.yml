@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: refresh
+  group: daily-recap
   cancel-in-progress: false
 
 permissions:
