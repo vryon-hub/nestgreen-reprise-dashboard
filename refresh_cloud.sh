@@ -22,6 +22,10 @@ python3 extract_buyback_listings.py
 python3 fetch_competitors.py
 python3 build_dashboard_data.py
 
+# alerte email si les annonces BackMarket semblent hors ligne en masse (cas
+# réel du 28/08/2026) ; ne renvoie qu'au début de l'incident (alert_state.json).
+python3 check_listings_offline_alert.py
+
 python3 append_backbox_history.py
 python3 build_backbox_history_data.py
 python3 build_backbox_raw_by_day.py
