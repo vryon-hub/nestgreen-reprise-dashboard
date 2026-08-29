@@ -1,0 +1,8 @@
+# Dumps bruts par listing/marché — régénérés à chaque run depuis l'API,
+# jamais commités (contenu déjà agrégé dans dashboard_data.json et volume_data.json).
+buyback_listings.json
+buyback_listings.csv
+competitors.json
+today_hourly.json
+__pycache__/
+*.pyc

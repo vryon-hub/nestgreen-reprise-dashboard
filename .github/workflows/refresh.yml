@@ -1,0 +1,40 @@
+name: Refresh dashboard
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Installer les dépendances
+        run: pip install certifi
+
+      - name: Rafraîchir les données et reconstruire le dashboard
+        env:
+          BM_API_KEY: ${{ secrets.BM_API_KEY }}
+        run: bash refresh_cloud.sh
+
+      - name: Committer et pousser les fichiers mis à jour
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet && echo "Rien à committer" || git commit -m "auto: refresh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push

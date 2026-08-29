@@ -1,0 +1,2397 @@
+<meta charset="utf-8">
+<title>Reprise Nestgreen</title>
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    color-scheme: light;
+    --page:        #FAFAFA;
+    --card:        #FFFFFF;
+    --wash:        #F0F4F1;
+    --ink:         #242424;
+    --ink-2:       #5B6560;
+    --ink-muted:   #8B948E;
+    --border:      rgba(36,36,36,0.10);
+    --border-2:    rgba(36,36,36,0.16);
+    --accent:      #006A38;
+    --accent-ink:  #FFFFFF;
+    --accent-wash: #E5F0E9;
+    --grid:        #E7EAE7;
+
+    /* rampe ordinale d'état (pire -> meilleur), teinte accent */
+    --g0: #E4EEE8; --g1: #C6DED0; --g2: #9AC7AC; --g3: #66AC80; --g4: #348C5C; --g5: #006A38;
+    --g0-ink: #3C4A41; --g1-ink: #33463A; --g2-ink: #1E3E2C; --g3-ink: #163823; --g4-ink: #FFFFFF; --g5-ink: #FFFFFF;
+
+    /* marchés (catégoriel validé, slots 1-4) */
+    --m-de: #2a78d6; --m-es: #eb6834; --m-fr: #1baf7a; --m-it: #eda100;
+
+    /* statut BackBox (réservé, jamais réutilisé comme couleur de série) */
+    --status-win: #006A38; --status-lose: #C43D3D;
+    --chart-ptw: #5B6FE0;
+
+    --shadow: 0 1px 2px rgba(36,36,36,0.06), 0 4px 16px rgba(36,36,36,0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page:        #10140F;
+      --card:        #171E17;
+      --wash:        #1C231C;
+      --ink:         #F3F6F3;
+      --ink-2:       #B7C2BB;
+      --ink-muted:   #7E897F;
+      --border:      rgba(255,255,255,0.10);
+      --border-2:    rgba(255,255,255,0.16);
+      --accent:      #35A873;
+      --accent-ink:  #08130D;
+      --accent-wash: #1B2E22;
+      --grid:        #262E26;
+
+      --g0: #23301F; --g1: #2B4230; --g2: #305943; --g3: #35744E; --g4: #2E9761; --g5: #35A873;
+      --g0-ink: #B9C7B7; --g1-ink: #C4D6C6; --g2-ink: #CFE6D4; --g3-ink: #FFFFFF; --g4-ink: #08130D; --g5-ink: #08130D;
+
+      --m-de: #3987e5; --m-es: #d95926; --m-fr: #199e70; --m-it: #c98500;
+
+      --status-win: #35A873; --status-lose: #E2685F;
+      --chart-ptw: #8B9BFF;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:        #10140F;
+    --card:        #171E17;
+    --wash:        #1C231C;
+    --ink:         #F3F6F3;
+    --ink-2:       #B7C2BB;
+    --ink-muted:   #7E897F;
+    --border:      rgba(255,255,255,0.10);
+    --border-2:    rgba(255,255,255,0.16);
+    --accent:      #35A873;
+    --accent-ink:  #08130D;
+    --accent-wash: #1B2E22;
+    --grid:        #262E26;
+
+    --g0: #23301F; --g1: #2B4230; --g2: #305943; --g3: #35744E; --g4: #2E9761; --g5: #35A873;
+    --g0-ink: #B9C7B7; --g1-ink: #C4D6C6; --g2-ink: #CFE6D4; --g3-ink: #FFFFFF; --g4-ink: #08130D; --g5-ink: #08130D;
+
+    --m-de: #3987e5; --m-es: #d95926; --m-fr: #199e70; --m-it: #c98500;
+
+    --status-win: #35A873; --status-lose: #E2685F;
+      --chart-ptw: #8B9BFF;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 32px 56px;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+  /* ---- header ---- */
+  header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand .badge {
+    background: var(--accent); color: var(--accent-ink);
+    font-weight: 700; font-size: 13px; letter-spacing: 0.02em;
+    padding: 5px 10px; border-radius: 6px;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+  .subtitle { color: var(--ink-2); font-size: 13.5px; }
+  .meta { color: var(--ink-muted); font-size: 12.5px; text-align: right; }
+
+  /* ---- stat tiles ---- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .tile {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow);
+  }
+  .tile .label { font-size: 11.5px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .tile .value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile .sub { font-size: 12px; color: var(--ink-2); }
+  .tile-market-rows { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+  .tile-market-row { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+  .tile-market-row .mkt-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .tile-market-row .mkt-name { color: var(--ink-2); }
+  .tile-market-row .mkt-pct { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ---- panel shared ---- */
+  .panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .panel-head {
+    padding: 16px 18px 4px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .panel-head h2 { font-size: 14.5px; font-weight: 600; margin: 0; }
+  .panel-head .hint { font-size: 12px; color: var(--ink-muted); }
+
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 20;
+    background: var(--ink); color: var(--page);
+    font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25); opacity: 0; transform: translateY(4px);
+    transition: opacity 120ms ease, transform 120ms ease; max-width: 220px;
+  }
+  .tooltip.show { opacity: 1; transform: translateY(0); }
+  .tooltip .t-title { font-weight: 600; margin-bottom: 2px; }
+  .tooltip .t-row { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
+
+  /* ---- pop-up marge (achat -> marge J -> revente estimée M+3 -> marge M+3) ---- */
+  .price-cell.clickable { cursor: pointer; border-radius: 5px; padding: 2px 5px; margin: -2px -5px; transition: background 120ms ease; }
+  .price-cell.clickable:hover { background: var(--accent-wash); }
+  .margin-overlay {
+    position: fixed; inset: 0; z-index: 30; display: none;
+    background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 20px;
+  }
+  .margin-overlay.show { display: flex; }
+  .margin-modal {
+    background: var(--card); border-radius: 14px; box-shadow: var(--shadow);
+    width: 100%; max-width: 420px; padding: 20px 22px 18px; position: relative;
+  }
+  .margin-close {
+    position: absolute; top: 12px; right: 12px; border: none; background: none; cursor: pointer;
+    color: var(--ink-muted); font-size: 18px; line-height: 1; padding: 4px;
+  }
+  .margin-close:hover { color: var(--ink); }
+  .margin-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; padding-right: 24px; }
+  .margin-device { font-weight: 600; font-size: 15px; }
+  .margin-sub { font-size: 12px; color: var(--ink-muted); }
+  .margin-steps { display: flex; flex-direction: column; margin-top: 14px; }
+  .margin-step {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .margin-step:last-child { border-bottom: none; }
+  .margin-step .label { font-size: 12.5px; color: var(--ink-2); }
+  .margin-step .value { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+  .margin-step.margin .value { font-size: 17px; }
+  .margin-step.margin.positive .value { color: var(--status-win); }
+  .margin-step.margin.negative .value { color: var(--status-lose); }
+  .margin-pct { font-size: 12px; font-weight: 500; color: var(--ink-muted); margin-left: 6px; }
+  .margin-divider { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .margin-divider::before, .margin-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .margin-caveat { margin-top: 12px; font-size: 11.5px; color: var(--ink-muted); font-style: italic; line-height: 1.5; }
+  .margin-unavailable { padding: 18px 0 6px; font-size: 13px; color: var(--ink-muted); text-align: center; line-height: 1.6; }
+
+  /* ---- filters ---- */
+  .table-note {
+    padding: 12px 18px 0; font-size: 12px; color: var(--ink-muted); font-style: italic;
+    display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
+  }
+  .note-sep { opacity: 0.5; font-style: normal; }
+  .dot-legend { display: inline-flex; align-items: center; gap: 5px; }
+  .dot-legend .status-dot { cursor: default; }
+  .filters { display: flex; align-items: center; gap: 10px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+  .search {
+    flex: 1 1 220px; min-width: 180px; display: flex; align-items: center; gap: 8px;
+    background: var(--wash); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+  }
+  .search svg { flex: none; opacity: 0.55; }
+  .search input {
+    border: none; outline: none; background: transparent; color: var(--ink); font: inherit; font-size: 13.5px; width: 100%;
+  }
+  .search input::placeholder { color: var(--ink-muted); }
+
+  .chipset { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--border-2); background: var(--card); color: var(--ink-2);
+    font: inherit; font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px;
+    cursor: pointer; transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chip:hover { background: var(--wash); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip[aria-pressed="true"] .dot { background: var(--accent-ink); }
+
+  .reset-btn {
+    border: none; background: none; color: var(--ink-muted); font: inherit; font-size: 12.5px;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 6px 4px;
+  }
+  .reset-btn:hover { color: var(--ink); }
+
+  /* ---- table ---- */
+  .table-scroll { overflow: auto; max-height: 62vh; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
+  thead th {
+    position: sticky; top: 0; background: var(--card); z-index: 1;
+    text-align: left; font-size: 11.5px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em;
+    font-weight: 600; padding: 10px 18px; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap;
+  }
+  thead th.num, td.num { text-align: right; }
+  thead th:first-child, td:first-child { padding-left: 18px; }
+  thead th:last-child, td:last-child { padding-right: 18px; }
+  thead th .arrow { opacity: 0.4; margin-left: 3px; }
+  thead th[aria-sort="ascending"] .arrow, thead th[aria-sort="descending"] .arrow { opacity: 1; color: var(--accent); }
+  tbody td { padding: 9px 18px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:hover td { background: var(--wash); }
+  td.device { display: flex; align-items: center; gap: 8px; line-height: 1.3; }
+  .device-text { display: flex; flex-direction: column; gap: 1px; }
+  .device-name { font-weight: 500; }
+  .device-name.device-unknown { font-weight: 400; font-style: italic; color: var(--ink-muted); }
+  .device-sku { font-size: 11px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  td.num { font-variant-numeric: tabular-nums; color: var(--ink); }
+  td.num.empty { color: var(--ink-muted); }
+  .price-cell { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; cursor: help; }
+  .status-dot.status-win { background: var(--status-win); }
+  .status-dot.status-lose { background: var(--status-lose); }
+
+  .grade-pill {
+    display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  }
+
+  .empty-state { padding: 48px 18px; text-align: center; color: var(--ink-muted); font-size: 13.5px; display: none; }
+  .empty-state.show { display: block; }
+
+  /* ---- ligne cliquable + détail façon back-office BackMarket ---- */
+  tr.row-main { cursor: pointer; }
+  .expand-chevron {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; color: var(--ink-muted); font-size: 10px;
+    transition: transform 150ms ease;
+  }
+  tr.row-main.is-expanded .expand-chevron { transform: rotate(90deg); color: var(--accent); }
+  tr.row-main.is-expanded td { background: var(--wash); }
+
+  tr.row-detail > td { padding: 0; border-bottom: 1px solid var(--border); }
+  .detail-panel { padding: 16px 18px 18px 40px; background: var(--wash); }
+  .detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .detail-device { font-weight: 600; font-size: 14px; text-decoration: underline; text-decoration-color: var(--border-2); text-underline-offset: 3px; }
+  .detail-sku { font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  .detail-table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 520px; }
+  .detail-table th {
+    text-align: left; font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.03em;
+    font-weight: 600; padding: 9px 14px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .detail-table th.num, .detail-table td.num { text-align: right; }
+  .detail-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  .detail-table tr:last-child td { border-bottom: none; }
+  .detail-status { font-variant-numeric: normal; white-space: nowrap; }
+  .detail-status.status-win-text { color: var(--status-win); font-weight: 500; }
+  .detail-status.status-lose-text { color: var(--status-lose); }
+  .detail-status.status-unknown { color: var(--ink-muted); font-style: italic; }
+  .detail-caveat { margin-top: 10px; font-size: 11.5px; color: var(--ink-muted); font-style: italic; }
+
+  .table-foot { padding: 10px 18px; font-size: 12px; color: var(--ink-muted); border-top: 1px solid var(--border); }
+
+  footer.page-foot { text-align: center; color: var(--ink-muted); font-size: 11.5px; padding-top: 4px; }
+
+  @media (max-width: 720px) {
+    body { padding: 20px 14px 40px; }
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    header.top { flex-direction: column; align-items: flex-start; }
+    .meta { text-align: left; }
+  }
+
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    color-scheme: light;
+    --page:        #FAFAFA;
+    --card:        #FFFFFF;
+    --wash:        #F0F4F1;
+    --ink:         #242424;
+    --ink-2:       #5B6560;
+    --ink-muted:   #8B948E;
+    --border:      rgba(36,36,36,0.10);
+    --border-2:    rgba(36,36,36,0.16);
+    --accent:      #006A38;
+    --accent-ink:  #FFFFFF;
+    --accent-wash: #E5F0E9;
+    --grid:        #E7EAE7;
+    --shadow: 0 1px 2px rgba(36,36,36,0.06), 0 4px 16px rgba(36,36,36,0.05);
+
+    /* rampe ordinale d'état, identique à l'onglet Prix (mêmes libellés de grade) */
+    --g0: #E4EEE8; --g1: #C6DED0; --g2: #9AC7AC; --g3: #66AC80; --g4: #348C5C; --g5: #006A38;
+    --line: #006A38;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page:        #10140F;
+      --card:        #171E17;
+      --wash:        #1C231C;
+      --ink:         #F3F6F3;
+      --ink-2:       #B7C2BB;
+      --ink-muted:   #7E897F;
+      --border:      rgba(255,255,255,0.10);
+      --border-2:    rgba(255,255,255,0.16);
+      --accent:      #35A873;
+      --accent-ink:  #08130D;
+      --accent-wash: #1B2E22;
+      --grid:        #262E26;
+      --g0: #23301F; --g1: #2B4230; --g2: #305943; --g3: #35744E; --g4: #2E9761; --g5: #35A873;
+      --line: #35A873;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:        #10140F;
+    --card:        #171E17;
+    --wash:        #1C231C;
+    --ink:         #F3F6F3;
+    --ink-2:       #B7C2BB;
+    --ink-muted:   #7E897F;
+    --border:      rgba(255,255,255,0.10);
+    --border-2:    rgba(255,255,255,0.16);
+    --accent:      #35A873;
+    --accent-ink:  #08130D;
+    --accent-wash: #1B2E22;
+    --grid:        #262E26;
+    --g0: #23301F; --g1: #2B4230; --g2: #305943; --g3: #35744E; --g4: #2E9761; --g5: #35A873;
+    --line: #35A873;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 32px 56px;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+  header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand .badge {
+    background: var(--accent); color: var(--accent-ink);
+    font-weight: 700; font-size: 13px; letter-spacing: 0.02em;
+    padding: 5px 10px; border-radius: 6px;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+  .subtitle { color: var(--ink-2); font-size: 13.5px; }
+  .meta { color: var(--ink-muted); font-size: 12.5px; text-align: right; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .tile {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow);
+  }
+  .tile .label { font-size: 11.5px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .tile .value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile .sub { font-size: 12px; color: var(--ink-2); }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .panel-head {
+    padding: 16px 18px 4px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .panel-head h2 { font-size: 14.5px; font-weight: 600; margin: 0; }
+  .panel-head .hint { font-size: 12px; color: var(--ink-muted); }
+
+  .filters { display: flex; align-items: center; gap: 10px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+  .search {
+    flex: 1 1 220px; min-width: 180px; display: flex; align-items: center; gap: 8px;
+    background: var(--wash); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+  }
+  .search svg { flex: none; opacity: 0.55; }
+  .search input {
+    border: none; outline: none; background: transparent; color: var(--ink); font: inherit; font-size: 13.5px; width: 100%;
+  }
+  .search input::placeholder { color: var(--ink-muted); }
+
+  .date-field {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    background: var(--wash); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+  }
+  .date-field svg { flex: none; opacity: 0.55; }
+  .date-field input, .date-field select {
+    border: none; outline: none; background: transparent; color: var(--ink); font: inherit; font-size: 13.5px;
+    color-scheme: light dark;
+  }
+  .date-field select { cursor: pointer; }
+
+  .chipset { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--border-2); background: var(--card); color: var(--ink-2);
+    font: inherit; font-size: 12.5px; font-weight: 500; padding: 6px 13px; border-radius: 999px;
+    cursor: pointer; transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  .chip:hover { background: var(--wash); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .chip[aria-pressed="true"] .dot { background: var(--accent-ink) !important; }
+
+  .reset-btn {
+    border: none; background: none; color: var(--ink-muted); font: inherit; font-size: 12.5px;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 6px 4px;
+  }
+  .reset-btn:hover { color: var(--ink); }
+
+  .chart-body { padding: 8px 18px 18px; overflow-x: auto; }
+  .bb-chart-body { overflow-x: visible; }
+  .bb-chart-flex { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  #bb-chart-scroll { flex: 1 1 460px; min-width: 0; overflow-x: auto; }
+  .bb-chart-table-wrap {
+    flex: none; width: 350px; max-height: 236px; overflow: auto;
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .bb-chart-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; font-size: 11.5px; }
+  .bb-chart-table th, .bb-chart-table td {
+    padding: 5px 4px; text-align: right; border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bb-chart-table th:nth-child(1), .bb-chart-table td:nth-child(1) { width: 22%; }
+  .bb-chart-table th:nth-child(2), .bb-chart-table td:nth-child(2) { width: 27%; }
+  .bb-chart-table th:nth-child(3), .bb-chart-table td:nth-child(3) { width: 27%; }
+  .bb-chart-table th:nth-child(4), .bb-chart-table td:nth-child(4) { width: 24%; }
+  .bb-chart-table th { position: sticky; top: 0; background: var(--card); color: var(--ink-muted); font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: 0.02em; }
+  .bb-chart-table th:first-child, .bb-chart-table td:first-child { text-align: left; }
+  .bb-chart-table tbody tr:last-child td { border-bottom: none; }
+  .bb-chart-table .result-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  #v-chart-scroll { min-width: 100%; }
+  #v-chart { display: block; overflow: visible; }
+  .bar { cursor: pointer; }
+  .bar:hover { filter: brightness(1.12); }
+  .axis-label { fill: var(--ink-muted); font-size: 10px; font-family: "Inter", sans-serif; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .bb-chart-legend { display: flex; gap: 16px; padding: 0 18px 4px; font-size: 12px; color: var(--ink-2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 20;
+    background: var(--ink); color: var(--page);
+    font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25); opacity: 0; transform: translateY(4px);
+    transition: opacity 120ms ease, transform 120ms ease; max-width: 240px;
+  }
+  .tooltip.show { opacity: 1; transform: translateY(0); }
+  .tooltip .t-title { font-weight: 600; margin-bottom: 2px; }
+
+  .line-point { cursor: pointer; }
+  .line-path { fill: none; stroke: var(--line); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .line-area { fill: var(--line); opacity: 0.08; }
+
+  .view-toggle { display: flex; gap: 6px; margin-left: auto; }
+
+  .table-scroll { overflow: auto; max-height: 56vh; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+  thead th {
+    position: sticky; top: 0; background: var(--card); z-index: 1;
+    text-align: left; font-size: 11.5px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em;
+    font-weight: 600; padding: 10px 18px; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap;
+  }
+  thead th.num, td.num { text-align: right; }
+  thead th:first-child, td:first-child { padding-left: 18px; }
+  thead th:last-child, td:last-child { padding-right: 18px; }
+  thead th .arrow { opacity: 0.4; margin-left: 3px; }
+  thead th[aria-sort="ascending"] .arrow, thead th[aria-sort="descending"] .arrow { opacity: 1; color: var(--accent); }
+  tbody td { padding: 9px 18px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:hover td { background: var(--wash); }
+  td.num { font-variant-numeric: tabular-nums; color: var(--ink); }
+  td.device { font-weight: 500; }
+  .bar-cell { display: flex; align-items: center; gap: 10px; }
+  .bar-track { flex: 1; height: 6px; border-radius: 3px; background: var(--wash); overflow: hidden; min-width: 60px; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+  .bar-fill.status-lost { background: var(--status-lose, #C43D3D); }
+
+  /* ---- ligne appareil cliquable -> détail par grade ---- */
+  tr.row-main.clickable { cursor: pointer; }
+  .expand-chevron {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; color: var(--ink-muted); font-size: 10px; margin-right: 4px;
+    transition: transform 150ms ease;
+  }
+  tr.row-main.is-expanded .expand-chevron { transform: rotate(90deg); color: var(--accent); }
+  tr.row-main.is-expanded td { background: var(--wash); }
+  tr.row-detail > td { padding: 0; border-bottom: 1px solid var(--border); }
+  .detail-panel { padding: 14px 18px 16px 40px; background: var(--wash); }
+  .detail-table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 360px; }
+  .detail-table th {
+    text-align: left; font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.03em;
+    font-weight: 600; padding: 9px 14px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .detail-table th.num, .detail-table td.num { text-align: right; }
+  .detail-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  .detail-table tr:last-child td { border-bottom: none; }
+
+  .conversion-body { display: flex; gap: 24px; padding: 18px; flex-wrap: wrap; align-items: flex-start; }
+  .stat-tiles { flex: 0 0 240px; display: flex; flex-direction: column; gap: 16px; }
+  .stat-tile { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); }
+  .stat-value { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-sub { font-size: 12.5px; color: var(--ink-2); }
+  .conversion-table-wrap { flex: 1 1 360px; max-height: none; }
+  .conversion-table-wrap table { min-width: 320px; }
+
+  .empty-state { padding: 48px 18px; text-align: center; color: var(--ink-muted); font-size: 13.5px; display: none; }
+  .empty-state.show { display: block; }
+  .table-foot { padding: 10px 18px; font-size: 12px; color: var(--ink-muted); border-top: 1px solid var(--border); }
+
+  footer.page-foot { text-align: center; color: var(--ink-muted); font-size: 11.5px; padding-top: 4px; }
+
+  @media (max-width: 720px) {
+    body { padding: 20px 14px 40px; }
+    header.top { flex-direction: column; align-items: flex-start; }
+    .meta { text-align: left; }
+  }
+
+
+  .tab-switch { display: flex; gap: 8px; padding: 4px; background: var(--wash); border-radius: 10px; width: fit-content; margin: 0 auto 4px; }
+  .tab-btn {
+    border: none; background: none; color: var(--ink-2); font: inherit; font-size: 13.5px; font-weight: 600;
+    padding: 8px 20px; border-radius: 7px; cursor: pointer; transition: background 120ms ease, color 120ms ease;
+  }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { background: var(--card); color: var(--accent); box-shadow: var(--shadow); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+</style>
+
+<div class="tab-switch">
+  <button class="tab-btn active" data-tab="prix">Prix</button>
+  <button class="tab-btn" data-tab="volume">Volume</button>
+</div>
+
+<div class="tab-panel active" id="tab-prix">
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="badge">Nestgreen</span>
+      <div>
+        <h1>Grille Reprise</h1>
+        <div class="subtitle">Prix de rachat publiés sur BackMarket Buyback</div>
+      </div>
+    </div>
+    <div class="meta" id="meta-updated"></div>
+  </header>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="panel">
+    <div class="table-note">
+      Appareils déduits automatiquement du SKU interne (pas une donnée officielle BackMarket) — à valider.
+      <span class="note-sep">·</span>
+      <span class="dot-legend"><span class="status-dot status-win"></span>vous gagnez la BackBox</span>
+      <span class="dot-legend"><span class="status-dot status-lose"></span>un concurrent gagne — survolez le prix pour voir celui à battre</span>
+    </div>
+    <div class="filters">
+      <label class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="text" placeholder="Rechercher un appareil ou un SKU…" autocomplete="off" />
+      </label>
+      <label class="date-field">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        <select id="main-model-select"></select>
+      </label>
+      <label class="date-field">
+        <select id="main-capacity-select"></select>
+      </label>
+      <div class="chipset" id="brand-chips"></div>
+      <div class="chipset" id="grade-chips"></div>
+      <div class="chipset" id="market-chips"></div>
+      <div class="chipset" id="backbox-chips">
+        <button class="chip" data-backbox="all" aria-pressed="true">BackBox : tous</button>
+        <button class="chip" data-backbox="yes" aria-pressed="false">BackBox : oui</button>
+        <button class="chip" data-backbox="no" aria-pressed="false">BackBox : non</button>
+      </div>
+      <button class="reset-btn" id="reset">Réinitialiser</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="thead-row"></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state">Aucune référence ne correspond à ces filtres.</div>
+    </div>
+    <div class="table-foot" id="table-foot"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Historique BackBox</h2>
+      <span class="hint" id="bb-hint">suivi démarré le 28/08/2026, pas de rétroactif avant cette date</span>
+    </div>
+    <div class="filters">
+      <div class="chipset" id="bb-granularity-chips">
+        <button class="chip" data-gran="day" aria-pressed="false">Jour</button>
+        <button class="chip" data-gran="week" aria-pressed="true">Semaine</button>
+        <button class="chip" data-gran="month" aria-pressed="false">Mois</button>
+        <button class="chip" data-gran="year" aria-pressed="false">Année</button>
+      </div>
+      <label class="date-field">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <input id="bb-ref-date" type="date" />
+        <input id="bb-ref-week" type="week" style="display:none" />
+        <input id="bb-ref-month" type="month" style="display:none" />
+        <select id="bb-ref-year" style="display:none"></select>
+      </label>
+      <button class="reset-btn" id="bb-today-btn">Aujourd'hui</button>
+      <label class="date-field">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        <select id="bb-model-select"></select>
+      </label>
+      <label class="date-field">
+        <select id="bb-capacity-select"></select>
+      </label>
+      <label class="date-field">
+        <select id="bb-grade-select"></select>
+      </label>
+      <label class="date-field">
+        <select id="bb-market-select"></select>
+      </label>
+    </div>
+    <div class="conversion-body">
+      <div class="stat-tiles">
+        <div class="stat-tile">
+          <div class="stat-label">% du temps avec la BackBox</div>
+          <div class="stat-value accent" id="bb-pct">—</div>
+          <div class="stat-sub" id="bb-sub"></div>
+        </div>
+      </div>
+      <div class="table-scroll conversion-table-wrap">
+        <table>
+          <thead><tr><th>Grade</th><th class="num">BackBox gagnée</th><th class="num">Couples listing×marché</th></tr></thead>
+          <tbody id="bb-grade-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="bb-chart-legend">
+      <span class="dot-legend"><span class="legend-dot" style="background:var(--accent)"></span>Mon prix</span>
+      <span class="dot-legend" title="Prix qu'il vous faudrait pour gagner la BackBox. Quand vous gagnez, l'API BackMarket ne révèle pas le prix du concurrent et affiche votre propre prix à la place — c'est pour ça que cette courbe colle exactement à &quot;Mon prix&quot; quand vous êtes gagnant."><span class="legend-dot" style="background:var(--chart-ptw)"></span>Prix pour gagner la BackBox</span>
+      <span class="dot-legend" style="margin-left:auto">Résultat réel : <span class="legend-dot" style="background:var(--status-win)"></span>gagné <span class="legend-dot" style="background:var(--status-lose)"></span>perdu</span>
+    </div>
+    <div class="chart-body bb-chart-body">
+      <div class="bb-chart-flex">
+        <div id="bb-chart-scroll">
+          <svg id="bb-chart"></svg>
+        </div>
+        <div class="bb-chart-table-wrap">
+          <table class="bb-chart-table">
+            <thead><tr><th></th><th>Prix</th><th>Repère</th><th>Résult.</th></tr></thead>
+            <tbody id="bb-chart-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page-foot">Source : API BackMarket · /ws/buyback/v1/listings</footer>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="margin-overlay" id="margin-overlay">
+  <div class="margin-modal" id="margin-modal"></div>
+</div>
+</div>
+
+<div class="tab-panel" id="tab-volume">
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="badge">Nestgreen</span>
+      <div>
+        <h1>Volume Reprise</h1>
+        <div class="subtitle">Commandes de reprise BackMarket, par période, appareil et grade</div>
+      </div>
+    </div>
+    <div class="meta" id="v-meta-updated"></div>
+  </header>
+
+  <section class="tiles" id="v-tiles"></section>
+
+  <section class="panel">
+    <div class="filters">
+      <div class="chipset" id="v-granularity-chips">
+        <button class="chip" data-gran="day">Jour</button>
+        <button class="chip" data-gran="week">Semaine</button>
+        <button class="chip" data-gran="month">Mois</button>
+        <button class="chip" data-gran="year">Année</button>
+      </div>
+      <label class="date-field">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <input id="v-ref-date" type="date" />
+        <input id="v-ref-week" type="week" style="display:none" />
+        <input id="v-ref-month" type="month" style="display:none" />
+        <select id="v-ref-year" style="display:none"></select>
+      </label>
+      <button class="reset-btn" id="v-today-btn">Aujourd'hui</button>
+      <label class="date-field">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        <select id="v-model-select"></select>
+      </label>
+      <label class="date-field">
+        <select id="v-capacity-select"></select>
+      </label>
+      <div class="chipset" id="v-grade-chips"></div>
+      <button class="reset-btn" id="v-reset">Réinitialiser</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Reprises dans le temps</h2>
+      <span class="hint">survolez une barre pour le détail</span>
+    </div>
+    <div class="chart-body">
+      <div id="v-chart-scroll">
+        <svg id="v-chart"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Tendance des prix</h2>
+      <span class="hint">prix moyen constaté, survolez la courbe</span>
+    </div>
+    <div class="chart-body">
+      <div id="v-price-chart-scroll">
+        <svg id="v-price-chart"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Reprises initiées — période sélectionnée</h2>
+      <span class="hint">reprises dont la promesse a été créée pendant la période choisie, et où elles en sont aujourd'hui</span>
+    </div>
+    <div class="conversion-body">
+      <div class="stat-tiles">
+        <div class="stat-tile">
+          <div class="stat-label">Reprises initiées</div>
+          <div class="stat-value" id="v-stat-total">—</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">Payées</div>
+          <div class="stat-value accent" id="v-stat-paid">—</div>
+          <div class="stat-sub" id="v-stat-paid-pct"></div>
+        </div>
+        <div class="stat-tile" id="v-stat-delay-tile">
+          <div class="stat-label">Délai moyen de paiement</div>
+          <div class="stat-value" id="v-stat-delay">—</div>
+          <div class="stat-sub" id="v-stat-delay-sub"></div>
+        </div>
+      </div>
+      <div class="table-scroll conversion-table-wrap">
+        <table>
+          <thead><tr><th>Statut</th><th class="num">Commandes</th><th class="num">%</th></tr></thead>
+          <tbody id="v-status-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 id="v-table-title">Répartition par appareil</h2>
+      <div class="view-toggle chipset" id="v-view-toggle">
+        <button class="chip" data-view="device" aria-pressed="true">Par appareil</button>
+        <button class="chip" data-view="grade">Par grade</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr id="v-thead-row"></tr></thead>
+        <tbody id="v-tbody"></tbody>
+      </table>
+      <div class="empty-state" id="v-empty-state">Rien ne correspond à ce filtre.</div>
+    </div>
+    <div class="table-foot" id="v-table-foot"></div>
+  </section>
+
+  <footer class="page-foot">Source : API BackMarket · /ws/buyback/v1/orders · aucune donnée client conservée</footer>
+</div>
+
+<div class="tooltip" id="v-tooltip"></div>
+</div>
+
+<script>
+(function() {
+
+const DATA = __PRIX_DATA_JSON__;
+const BUILT_AT = "__BUILT_AT__";
+const MARGIN_DATA = __MARGIN_DATA_JSON__;
+const MARGIN_INDEX = new Map(MARGIN_DATA.rows.map(r => [`${r[0]}|${r[1]}`, r]));
+
+// index 0 = meilleur état (même ordre que le back-office BackMarket) -> rampe la plus saturée en premier
+const GRADE_COLORS = ['g5','g4','g3','g2','g1','g0'];
+const GRADE_INK = ['g5-ink','g4-ink','g3-ink','g2-ink','g1-ink','g0-ink'];
+const MARKET_COLORS = { DE: 'm-de', ES: 'm-es', FR: 'm-fr', IT: 'm-it' };
+const MARKET_NAMES = { DE: 'Allemagne', ES: 'Espagne', FR: 'France', IT: 'Italie' };
+
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+const fmtEUR = (n) => n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+const fmtInt = (n) => n.toLocaleString('fr-FR');
+
+// ---------- state ----------
+const state = {
+  search: '',
+  mainModel: '',    // '' = tous les modèles (grille principale)
+  mainCapacity: '', // '' = toutes capacités (grille principale)
+  grades: new Set(DATA.gradeLabels.map((_, i) => i)),
+  markets: new Set(DATA.markets),
+  brands: new Set(DATA.brands),
+  backbox: 'all', // 'all' | 'yes' | 'no'
+  bbGranularity: 'week', // 'day'|'week'|'month'|'year' — historique BackBox (même logique que l'onglet Volume)
+  bbRefDate: null,       // "YYYY-MM-DD" choisie au calendrier ; null = aujourd'hui
+  bbModel: '',           // '' = tous les modèles
+  bbCapacity: '',        // '' = toutes capacités
+  bbGrade: null,         // null = tous les grades ; sinon un grade unique. La courbe de prix exige un grade précis.
+  bbMarket: null,        // null = tous les marchés ; sinon un marché unique. La courbe de prix exige un marché précis.
+  sortKey: 'device',
+  sortDir: 1,
+};
+
+// ---------- sélection Modèle/Capacité de la grille principale (même logique que partout ailleurs) ----------
+function parseDeviceModelCapacity(d) {
+  const m = (d || '').match(/^(.*) (\d+) Go$/);
+  return m ? { model: m[1], capacity: Number(m[2]) } : { model: d || '', capacity: null };
+}
+const MAIN_DEVICE_PARTS = [...new Set(DATA.rows.map(r => r.device).filter(Boolean))].map(parseDeviceModelCapacity);
+const MAIN_ALL_MODELS = [...new Set(MAIN_DEVICE_PARTS.map(d => d.model))].sort((a, b) => a.localeCompare(b));
+
+function mainCapacitiesFor(model) {
+  const caps = MAIN_DEVICE_PARTS
+    .filter(d => (!model || d.model === model) && d.capacity != null)
+    .map(d => d.capacity);
+  return [...new Set(caps)].sort((a, b) => a - b);
+}
+
+function renderMainCapacitySelect() {
+  const capSel = document.getElementById('main-capacity-select');
+  const caps = mainCapacitiesFor(state.mainModel);
+  capSel.innerHTML = `<option value="">Toutes capacités</option>` +
+    caps.map(c => `<option value="${c}">${c} Go</option>`).join('');
+  capSel.value = caps.includes(Number(state.mainCapacity)) ? state.mainCapacity : '';
+  if (capSel.value !== state.mainCapacity) state.mainCapacity = capSel.value;
+}
+
+function initMainModelCapacitySelects() {
+  const modelSel = document.getElementById('main-model-select');
+  modelSel.innerHTML = `<option value="">Tous les modèles</option>` +
+    MAIN_ALL_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+  modelSel.addEventListener('change', () => {
+    state.mainModel = modelSel.value;
+    state.mainCapacity = '';
+    renderMainCapacitySelect();
+    renderTable();
+  });
+  document.getElementById('main-capacity-select').addEventListener('change', (e) => {
+    state.mainCapacity = e.target.value;
+    renderTable();
+  });
+  renderMainCapacitySelect();
+}
+
+// ---------- historique BackBox (% de temps gagné, sur la période/le modèle choisis) ----------
+const BACKBOX_HISTORY_DATA = __BACKBOX_HISTORY_DATA_JSON__;
+const BB_DEVICE_PARTS = BACKBOX_HISTORY_DATA.devices.map(d => {
+  const m = d.match(/^(.*) (\d+) Go$/);
+  return m ? { model: m[1], capacity: Number(m[2]) } : { model: d, capacity: null };
+});
+const BB_ALL_MODELS = [...new Set(BB_DEVICE_PARTS.map(d => d.model))].sort((a, b) => a.localeCompare(b));
+
+function bbCapacitiesFor(model) {
+  const caps = BB_DEVICE_PARTS
+    .filter(d => (!model || d.model === model) && d.capacity != null)
+    .map(d => d.capacity);
+  return [...new Set(caps)].sort((a, b) => a - b);
+}
+
+function initBbModelCapacitySelects() {
+  const modelSel = document.getElementById('bb-model-select');
+  modelSel.innerHTML = `<option value="">Tous les modèles</option>` +
+    BB_ALL_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+  modelSel.addEventListener('change', () => {
+    state.bbModel = modelSel.value;
+    state.bbCapacity = '';
+    renderBbCapacitySelect();
+    renderBackboxHistory();
+  });
+  document.getElementById('bb-capacity-select').addEventListener('change', (e) => {
+    state.bbCapacity = e.target.value;
+    renderBackboxHistory();
+  });
+  renderBbCapacitySelect();
+
+  const gradeSel = document.getElementById('bb-grade-select');
+  gradeSel.innerHTML = `<option value="">Tous les grades</option>` +
+    DATA.gradeLabels.map((label, gi) => `<option value="${gi}">${label}</option>`).join('');
+  gradeSel.value = state.bbGrade ?? '';
+  gradeSel.addEventListener('change', (e) => {
+    state.bbGrade = e.target.value === '' ? null : Number(e.target.value);
+    renderBackboxHistory();
+  });
+
+  // grade et marché : "tous" pour le % / le tableau (agréger des victoires/défaites entre
+  // grades ou marchés reste un chiffre valide), mais la courbe de prix EXIGE les deux
+  // précisément choisis (moyenner un prix entre grades ou marchés n'a aucun sens).
+  const marketSel = document.getElementById('bb-market-select');
+  marketSel.innerHTML = `<option value="">Tous les marchés</option>` +
+    BACKBOX_HISTORY_DATA.markets.map(m => `<option value="${m}">${m}</option>`).join('');
+  marketSel.value = state.bbMarket ?? '';
+  marketSel.addEventListener('change', (e) => {
+    state.bbMarket = e.target.value || null;
+    renderBackboxHistory();
+  });
+}
+
+function renderBbCapacitySelect() {
+  const capSel = document.getElementById('bb-capacity-select');
+  const caps = bbCapacitiesFor(state.bbModel);
+  capSel.innerHTML = `<option value="">Toutes capacités</option>` +
+    caps.map(c => `<option value="${c}">${c} Go</option>`).join('');
+  capSel.value = caps.includes(Number(state.bbCapacity)) ? state.bbCapacity : '';
+  if (capSel.value !== state.bbCapacity) state.bbCapacity = capSel.value;
+}
+
+function bbMatchingDeviceIdxs() {
+  if (!state.bbModel && !state.bbCapacity) return null;
+  const set = new Set();
+  BB_DEVICE_PARTS.forEach((d, i) => {
+    if (state.bbModel && d.model !== state.bbModel) return;
+    if (state.bbCapacity && d.capacity !== Number(state.bbCapacity)) return;
+    set.add(i);
+  });
+  return set;
+}
+
+const BB_MONTH_NAMES = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+function bbIsoWeekKey(d) {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - day + 3);
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  return `${date.getUTCFullYear()}-S${String(week).padStart(2, '0')}`;
+}
+function bbTodayUTC() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+function bbRefDateUTC() { return state.bbRefDate || bbTodayUTC(); }
+function bbPeriodMatches(dateStr, granularity) {
+  const ref = bbRefDateUTC();
+  if (granularity === 'day') return dateStr === ref;
+  if (granularity === 'week') return bbIsoWeekKey(new Date(dateStr + 'T00:00:00Z')) === bbIsoWeekKey(new Date(ref + 'T00:00:00Z'));
+  if (granularity === 'month') return dateStr.slice(0, 7) === ref.slice(0, 7);
+  return dateStr.slice(0, 4) === ref.slice(0, 4);
+}
+function bbSubGranularity(granularity) {
+  if (granularity === 'day') return 'hour';
+  if (granularity === 'week' || granularity === 'month') return 'day';
+  return 'month';
+}
+function bbDateToWeekValue(dateStr) { return bbIsoWeekKey(new Date(dateStr + 'T00:00:00Z')).replace('-S', '-W'); }
+function bbWeekValueToDate(weekValue) {
+  const [y, w] = weekValue.split('-W').map(Number);
+  const simple = new Date(Date.UTC(y, 0, 1 + (w - 1) * 7));
+  const dow = simple.getUTCDay() || 7;
+  simple.setUTCDate(simple.getUTCDate() + 1 - dow);
+  return simple.toISOString().slice(0, 10);
+}
+
+function initBbDatePicker() {
+  const dates = BACKBOX_HISTORY_DATA.rows.map(r => r[0].slice(0, 10)).sort();
+  const minDate = dates[0] || bbTodayUTC(), maxDate = bbTodayUTC();
+
+  const dayInput = document.getElementById('bb-ref-date');
+  const weekInput = document.getElementById('bb-ref-week');
+  const monthInput = document.getElementById('bb-ref-month');
+  const yearSelect = document.getElementById('bb-ref-year');
+
+  dayInput.min = minDate; dayInput.max = maxDate;
+  weekInput.min = bbDateToWeekValue(minDate); weekInput.max = bbDateToWeekValue(maxDate);
+  monthInput.min = minDate.slice(0, 7); monthInput.max = maxDate.slice(0, 7);
+
+  const years = [];
+  for (let y = +minDate.slice(0, 4); y <= +maxDate.slice(0, 4); y++) years.push(y);
+  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  function syncWidgets() {
+    const ref = bbRefDateUTC();
+    dayInput.value = ref;
+    weekInput.value = bbDateToWeekValue(ref);
+    monthInput.value = ref.slice(0, 7);
+    yearSelect.value = ref.slice(0, 4);
+    [dayInput, weekInput, monthInput, yearSelect].forEach(el => el.style.display = 'none');
+    ({ day: dayInput, week: weekInput, month: monthInput, year: yearSelect }[state.bbGranularity]).style.display = '';
+  }
+
+  dayInput.addEventListener('change', () => { state.bbRefDate = dayInput.value || null; syncWidgets(); renderBackboxHistory(); });
+  weekInput.addEventListener('change', () => { if (weekInput.value) { state.bbRefDate = bbWeekValueToDate(weekInput.value); syncWidgets(); renderBackboxHistory(); } });
+  monthInput.addEventListener('change', () => { if (monthInput.value) { state.bbRefDate = monthInput.value + '-01'; syncWidgets(); renderBackboxHistory(); } });
+  yearSelect.addEventListener('change', () => { state.bbRefDate = yearSelect.value + '-01-01'; syncWidgets(); renderBackboxHistory(); });
+  document.getElementById('bb-today-btn').addEventListener('click', () => { state.bbRefDate = null; syncWidgets(); renderBackboxHistory(); });
+
+  document.querySelectorAll('#bb-granularity-chips .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.bbGranularity = chip.dataset.gran;
+      document.querySelectorAll('#bb-granularity-chips .chip').forEach(c => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+      syncWidgets();
+      renderBackboxHistory();
+    });
+  });
+
+  window.__syncBbDatePicker = syncWidgets;
+  syncWidgets();
+}
+
+function renderBackboxHistory() {
+  const devIdxs = bbMatchingDeviceIdxs();
+
+  // % et échantillons : grade et marché "tous" par défaut, ou restreints aux sélecteurs
+  // dédiés ci-dessus (indépendants des chips de la grille).
+  let samples = 0, wins = 0;
+  BACKBOX_HISTORY_DATA.rows.forEach(([hour, di, gi, mi, s, w]) => {
+    if (devIdxs !== null && !devIdxs.has(di)) return;
+    if (state.bbGrade != null && gi !== state.bbGrade) return;
+    if (state.bbMarket != null && BACKBOX_HISTORY_DATA.markets[mi] !== state.bbMarket) return;
+    if (!bbPeriodMatches(hour.slice(0, 10), state.bbGranularity)) return;
+    samples += s; wins += w;
+  });
+
+  const pct = samples ? (wins / samples * 100) : null;
+  const scope = [state.bbGrade != null ? DATA.gradeLabels[state.bbGrade] : null, state.bbMarket]
+    .filter(Boolean).join(' · ') || 'tous grades/marchés';
+  document.getElementById('bb-pct').textContent = pct != null ? `${pct.toFixed(1)} %` : '—';
+  document.getElementById('bb-sub').textContent = samples
+    ? `${fmtInt(wins)} / ${fmtInt(samples)} échantillons gagnants (${scope})`
+    : 'Pas encore de données pour cette sélection';
+
+  renderBackboxByGrade(devIdxs);
+  renderBackboxChart(devIdxs);
+}
+
+function renderBackboxByGrade(devIdxs) {
+  const tbody = document.getElementById('bb-grade-tbody');
+  tbody.innerHTML = DATA.gradeLabels.map((label, gi) => {
+    let samples = 0, wins = 0;
+    BACKBOX_HISTORY_DATA.rows.forEach(([hour, di, hgi, mi, s, w]) => {
+      if (hgi !== gi) return;
+      if (devIdxs !== null && !devIdxs.has(di)) return;
+      if (state.bbMarket != null && BACKBOX_HISTORY_DATA.markets[mi] !== state.bbMarket) return;
+      if (!bbPeriodMatches(hour.slice(0, 10), state.bbGranularity)) return;
+      samples += s; wins += w;
+    });
+    if (!samples) {
+      return `<tr><td>${label}</td><td class="num">—</td><td class="num">0</td></tr>`;
+    }
+    const pct = Math.round((wins / samples) * 100);
+    return `
+      <tr>
+        <td>${label}</td>
+        <td class="num"><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span>${pct}%</span></div></td>
+        <td class="num">${fmtInt(wins)} / ${fmtInt(samples)}</td>
+      </tr>`;
+  }).join('');
+}
+
+// courbe "mon prix" vs "prix pour gagner la BackBox" sur la période choisie.
+// Le gagné/perdu de chaque point vient du flag `is_winning` réel de l'API (samples/wins),
+// PAS d'une comparaison prix vs ptw : "price_to_win" n'est pas un simple seuil strict
+// (on observe des cas gagnants avec prix < ptw — c'est une marge de manœuvre indicative,
+// pas "il faut être au-dessus pour gagner"), donc la position relative des deux courbes
+// ne dit rien sur le résultat réel.
+function computeBackboxChartBuckets(devIdxs) {
+  const gran = bbSubGranularity(state.bbGranularity);
+  const buckets = new Map();
+  BACKBOX_HISTORY_DATA.rows.forEach(([hour, di, gi, mi, s, w, ptwSum, ptwN, priceSum, priceN]) => {
+    if (devIdxs !== null && !devIdxs.has(di)) return;
+    if (gi !== state.bbGrade) return;
+    if (BACKBOX_HISTORY_DATA.markets[mi] !== state.bbMarket) return;
+    const date = hour.slice(0, 10);
+    if (!bbPeriodMatches(date, state.bbGranularity)) return;
+    const key = gran === 'hour' ? hour : (gran === 'day' ? date : hour.slice(0, 7));
+    const b = buckets.get(key) || { ptwSum: 0, ptwN: 0, priceSum: 0, priceN: 0, samples: 0, wins: 0 };
+    b.ptwSum += ptwSum; b.ptwN += ptwN;
+    b.priceSum += priceSum; b.priceN += priceN;
+    b.samples += s; b.wins += w;
+    buckets.set(key, b);
+  });
+  return [...buckets.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([key, b]) => [
+      key,
+      b.ptwN ? b.ptwSum / b.ptwN : null,
+      b.priceN ? b.priceSum / b.priceN : null,
+      b.samples ? b.wins / b.samples : null,
+    ]);
+}
+
+function bbPointLabel(key, gran) {
+  if (gran === 'cycle') return key.slice(11, 16);
+  if (gran === 'hour') return key.slice(11) + 'h';
+  if (gran === 'day') return key.slice(8, 10) + '/' + key.slice(5, 7);
+  return `${BB_MONTH_NAMES[+key.slice(5, 7) - 1]} ${key.slice(2, 4)}`;
+}
+
+// Tableau chiffré à côté du graphique : même info que les courbes/la bande, mais lisible
+// point par point sans avoir à interpréter des positions relatives sur le graphique.
+function renderBackboxChartTable(points, gran, devIdxs) {
+  const tbody = document.getElementById('bb-chart-tbody');
+  if (!points || !points.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--ink-muted)">—</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = points.map(([key, a, b, winRate]) => {
+    const won = winRate == null ? null : winRate >= 0.5;
+    const dotColor = won == null ? 'var(--border-2)' : (won ? 'var(--status-win)' : 'var(--status-lose)');
+    const resultText = won == null ? '—' : `${Math.round(winRate * 100)}%`;
+    return `
+      <tr>
+        <td>${bbPointLabel(key, gran)}</td>
+        <td>${b != null ? fmtEUR(b) : '—'}</td>
+        <td>${a != null ? fmtEUR(a) : '—'}</td>
+        <td><span class="result-dot" style="background:${dotColor}"></span> ${resultText}</td>
+      </tr>`;
+  }).join('');
+}
+
+// Cache mémoire par jour : on ne re-télécharge pas backbox_raw/YYYY-MM-DD.json à
+// chaque changement de sélection si le jour a déjà été chargé (voir renderBackboxChartDay).
+const BB_RAW_CACHE = {};
+
+function drawBackboxChart(points, gran) {
+  const svg = document.getElementById('bb-chart');
+
+  // Les 2 courbes (prix) sont indépendantes du bandeau résultat (gagné/perdu réel) :
+  // le mélange des deux dans une seule ligne colorée avait déjà induit en erreur (voir
+  // commentaire de computeBackboxChartBuckets) — ici on les sépare visuellement.
+  const marginL = 54, marginR = 14, marginT = 18, stripH = 16, stripGap = 7, labelH = 22;
+  const marginB = stripH + stripGap + labelH;
+  const baseSlot = gran === 'cycle' ? 22 : (gran === 'hour' ? 40 : 64);
+  const barSlot = Math.max(baseSlot, 520 / Math.max(points.length - 1, 1));
+  const plotW = (points.length - 1) * barSlot;
+  const H = 260, plotH = H - marginT - marginB;
+  const W = plotW + marginL + marginR;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  if (points.length < 2) {
+    svg.innerHTML = `<text class="axis-label" x="${marginL}" y="${H / 2}">Pas encore assez de données pour tracer une courbe (le suivi vient de démarrer).</text>`;
+    return;
+  }
+
+  const allVals = points.flatMap(([, a, b]) => [a, b]).filter(v => v != null);
+  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+  const pad = (maxV - minV) * 0.15 || maxV * 0.1 || 1;
+  const lo = Math.max(0, minV - pad), hi = maxV + pad;
+  const x = (i) => marginL + i * barSlot;
+  const y = (v) => marginT + plotH - ((v - lo) / (hi - lo)) * plotH;
+
+  let parts = [];
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = lo + ((hi - lo) / ticks) * i;
+    const yy = y(v);
+    parts.push(`<line class="gridline" x1="${marginL}" x2="${W - marginR}" y1="${yy}" y2="${yy}" />`);
+    parts.push(`<text class="axis-label" x="${marginL - 8}" y="${yy + 3}" text-anchor="end">${Math.round(v)}€</text>`);
+  }
+
+  const buildLine = (series, color) => {
+    const pts = points.map((p, i) => [i, series(p)]).filter(([, v]) => v != null);
+    if (pts.length < 2) return '';
+    const linePts = pts.map(([i, v]) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    return `<polyline points="${linePts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />`;
+  };
+  parts.push(buildLine(([, a]) => a, 'var(--chart-ptw)'));  // prix pour gagner la BackBox
+  parts.push(buildLine(([, , b]) => b, 'var(--accent)'));   // mon prix
+
+  points.forEach(([key, a, b, winRate], i) => {
+    const maxLabels = Math.max(1, Math.floor(plotW / 46));
+    const showLabel = i % Math.ceil(points.length / maxLabels || 1) === 0;
+    const stripY = marginT + plotH + stripGap;
+    if (winRate != null) {
+      const won = winRate >= 0.5;
+      const w = Math.max(barSlot * 0.6, 6);
+      parts.push(`<rect x="${(x(i) - w / 2).toFixed(1)}" y="${stripY}" width="${w.toFixed(1)}" height="${stripH}" rx="3" fill="${won ? 'var(--status-win)' : 'var(--status-lose)'}" fill-opacity="0.85"><title>${Math.round(winRate * 100)}% du temps gagné sur ce point</title></rect>`);
+    }
+    if (showLabel) {
+      parts.push(`<text class="axis-label" x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle">${bbPointLabel(key, gran)}</text>`);
+    }
+    if (a != null) parts.push(`<circle cx="${x(i).toFixed(1)}" cy="${y(a).toFixed(1)}" r="2.5" fill="var(--chart-ptw)" />`);
+    if (b != null) parts.push(`<circle cx="${x(i).toFixed(1)}" cy="${y(b).toFixed(1)}" r="2.5" fill="var(--accent)" />`);
+  });
+
+  svg.innerHTML = parts.join('');
+}
+
+// Vue "Jour" : une courbe point par point sur chaque cycle de rafraîchissement (15/30 min),
+// pas un bucket horaire agrégé -> chargée à la demande depuis backbox_raw/YYYY-MM-DD.json
+// (même fichier que le détail au clic), pas embarquée dans la page pour ne pas l'alourdir.
+async function renderBackboxChartDay(devIdxs) {
+  const svg = document.getElementById('bb-chart');
+  const day = bbRefDateUTC();
+  try {
+    if (!BB_RAW_CACHE[day]) {
+      const resp = await fetch(`backbox_raw/${day}.json`);
+      if (!resp.ok) throw new Error('missing');
+      BB_RAW_CACHE[day] = await resp.json();
+    }
+    const raw = BB_RAW_CACHE[day];
+    const marketIdx = raw.markets.indexOf(state.bbMarket);
+    const buckets = new Map(); // ts exact -> { ptwSum, ptwN, priceSum, priceN, samples, wins }
+    raw.rows.forEach(([ts, di, gi, mi, ptw, price, win]) => {
+      if (gi !== state.bbGrade || mi !== marketIdx) return;
+      if (devIdxs !== null && !devIdxs.has(di)) return;
+      const b = buckets.get(ts) || { ptwSum: 0, ptwN: 0, priceSum: 0, priceN: 0, samples: 0, wins: 0 };
+      b.ptwSum += ptw; b.ptwN += 1;
+      b.priceSum += price; b.priceN += 1;
+      b.samples += 1; b.wins += win;
+      buckets.set(ts, b);
+    });
+    const points = [...buckets.entries()].sort((r1, r2) => r1[0].localeCompare(r2[0]))
+      .map(([ts, b]) => [ts, b.ptwN ? b.ptwSum / b.ptwN : null, b.priceN ? b.priceSum / b.priceN : null, b.samples ? b.wins / b.samples : null]);
+    drawBackboxChart(points, 'cycle');
+    renderBackboxChartTable(points, 'cycle', devIdxs);
+  } catch (err) {
+    svg.removeAttribute('width'); svg.removeAttribute('height');
+    svg.setAttribute('viewBox', '0 0 640 60');
+    svg.innerHTML = `<text class="axis-label" x="0" y="30">Détail par cycle indisponible pour le ${bbPointLabel(day, 'day')} (avant la mise en place du suivi, ou jour non tracé).</text>`;
+    renderBackboxChartTable([], 'cycle', devIdxs);
+  }
+}
+
+function renderBackboxChart(devIdxs) {
+  const svg = document.getElementById('bb-chart');
+
+  if (state.bbGrade == null || state.bbMarket == null) {
+    svg.removeAttribute('width'); svg.removeAttribute('height');
+    svg.setAttribute('viewBox', '0 0 640 60');
+    svg.innerHTML = `<text class="axis-label" x="0" y="30">Choisis un grade et un marché précis ci-dessus pour voir la courbe de prix — moyenner entre plusieurs grades ou marchés donnerait un prix qui ne correspond à aucun d'entre eux.</text>`;
+    renderBackboxChartTable([], null, devIdxs);
+    return;
+  }
+
+  if (state.bbGranularity === 'day') {
+    renderBackboxChartDay(devIdxs);
+    return;
+  }
+
+  const gran = bbSubGranularity(state.bbGranularity);
+  const points = computeBackboxChartBuckets(devIdxs).filter(([, a, b]) => a != null || b != null);
+  drawBackboxChart(points, gran);
+  renderBackboxChartTable(points, gran, devIdxs);
+}
+
+// ---------- stat tiles ----------
+function renderTiles() {
+  const rows = DATA.rows;
+  const skus = new Set(rows.map(r => r.sku));
+  const devices = new Set(rows.filter(r => r.device).map(r => r.device));
+
+  // BackBox gagnée par marché, sur l'instantané en cours (même source que le tableau
+  // et la tuile globale ci-dessous — mis à jour à chaque cycle de rafraîchissement,
+  // pas de calcul historique ici).
+  const byMarket = DATA.markets.map(m => {
+    let win = 0, total = 0;
+    rows.forEach(r => { const w = r.w && r.w[m]; if (w) { total++; if (w.win) win++; } });
+    return { market: m, pct: total ? Math.round((win / total) * 100) : null };
+  });
+
+  // Concurrence par appareil (agrégée sur tous grades/marchés) : le plus disputé
+  // (là où on perd le plus -> piste pour monter le prix) et le moins disputé
+  // (jamais challengé, toujours gagné -> marge possible en baissant le prix).
+  const byDevice = new Map();
+  rows.forEach(r => {
+    if (!r.w || !r.device) return;
+    DATA.markets.forEach(m => {
+      const w = r.w[m];
+      if (!w) return;
+      const d = byDevice.get(r.device) || { win: 0, total: 0 };
+      d.total += 1;
+      if (w.win) d.win += 1;
+      byDevice.set(r.device, d);
+    });
+  });
+  const MIN_SAMPLES = 3; // évite qu'un appareil avec 1-2 couples listing×marché fausse le classement
+  const deviceStats = [...byDevice.entries()]
+    .filter(([, d]) => d.total >= MIN_SAMPLES)
+    .map(([device, d]) => ({ device, win: d.win, total: d.total, pct: d.win / d.total }));
+  const mostContested = deviceStats.length ? deviceStats.reduce((a, b) => (b.pct < a.pct ? b : a)) : null;
+  const leastContested = deviceStats.length ? deviceStats.reduce((a, b) => (b.pct > a.pct ? b : a)) : null;
+
+  const winEntries = [];
+  rows.forEach(r => { if (r.w) DATA.markets.forEach(m => { if (r.w[m]) winEntries.push(r.w[m]); }); });
+  const winCount = winEntries.filter(w => w.win).length;
+  const winPct = winEntries.length ? Math.round((winCount / winEntries.length) * 100) : null;
+
+  const tiles = [
+    { label: 'Listings actives', value: rows.length.toLocaleString('fr-FR'), sub: `${devices.size} modèles · ${skus.size} SKU` },
+  ];
+  if (winPct != null) {
+    tiles.push({ label: 'BackBox gagnée', value: `${winPct}%`, sub: `${winCount} / ${winEntries.length} couples listing×marché` });
+  }
+  if (mostContested) {
+    tiles.push({ label: 'Le plus disputé', value: `${Math.round(mostContested.pct * 100)}%`, sub: `${mostContested.device} — ${mostContested.win}/${mostContested.total} gagnés · piste : monter le prix` });
+  }
+  if (leastContested) {
+    tiles.push({ label: 'Marge potentielle', value: `${Math.round(leastContested.pct * 100)}%`, sub: `${leastContested.device} — ${leastContested.win}/${leastContested.total} gagnés · jamais disputé, prix baissable` });
+  }
+
+  const el = document.getElementById('tiles');
+  el.innerHTML = tiles.map(t => `
+    <div class="tile">
+      <span class="label">${t.label}</span>
+      <span class="value">${t.value}</span>
+      <span class="sub">${t.sub}</span>
+    </div>`).join('') + `
+    <div class="tile">
+      <span class="label">BackBox par marché</span>
+      <div class="tile-market-rows">
+        ${byMarket.map(m => `
+          <div class="tile-market-row">
+            <span class="mkt-dot" style="background:var(--${MARKET_COLORS[m.market]})"></span>
+            <span class="mkt-name">${m.market}</span>
+            <span class="mkt-pct">${m.pct != null ? m.pct + '%' : '—'}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ---------- filters ----------
+function renderChips() {
+  const gradeEl = document.getElementById('grade-chips');
+  gradeEl.innerHTML = DATA.gradeLabels.map((label, i) => `
+    <button class="chip" data-kind="grade" data-val="${i}" aria-pressed="true">
+      <span class="dot" style="background:var(--${GRADE_COLORS[i]})"></span>${label}
+    </button>`).join('');
+
+  const marketEl = document.getElementById('market-chips');
+  marketEl.innerHTML = DATA.markets.map(m => `
+    <button class="chip" data-kind="market" data-val="${m}" aria-pressed="true">
+      <span class="dot" style="background:var(--${MARKET_COLORS[m]})"></span>${m}
+    </button>`).join('');
+
+  const brandEl = document.getElementById('brand-chips');
+  brandEl.innerHTML = DATA.brands.map(b => `
+    <button class="chip" data-kind="brand" data-val="${b}" aria-pressed="true">${b}</button>
+  `).join('');
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const kind = chip.dataset.kind;
+      const val = kind === 'grade' ? +chip.dataset.val : chip.dataset.val;
+      const set = kind === 'grade' ? state.grades : kind === 'market' ? state.markets : state.brands;
+      if (set.has(val)) { set.delete(val); chip.setAttribute('aria-pressed', 'false'); }
+      else { set.add(val); chip.setAttribute('aria-pressed', 'true'); }
+      renderTable();
+    });
+  });
+}
+
+// ---------- table ----------
+function renderThead() {
+  const cols = [
+    { key: 'device', label: 'Appareil' },
+    { key: 'g', label: 'État' },
+    ...DATA.markets.map(m => ({ key: m, label: m, num: true })),
+  ];
+  const row = document.getElementById('thead-row');
+  row.innerHTML = cols.map(c => `
+    <th class="${c.num ? 'num' : ''}" data-key="${c.key}">${c.label}<span class="arrow">▾</span></th>
+  `).join('');
+  row.querySelectorAll('th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (state.sortKey === key) state.sortDir *= -1; else { state.sortKey = key; state.sortDir = 1; }
+      row.querySelectorAll('th').forEach(t => t.removeAttribute('aria-sort'));
+      th.setAttribute('aria-sort', state.sortDir === 1 ? 'ascending' : 'descending');
+      renderTable();
+    });
+  });
+}
+
+// Statut BackBox d'une ligne, sur les marchés actuellement actifs (filtre marché).
+// Une ligne peut gagner sur un marché et perdre sur un autre : "Oui" et "Non"
+// ne sont pas exclusifs, ils reflètent juste "gagne quelque part" / "perd quelque part".
+function rowBackboxStatus(r) {
+  if (!r.w) return null;
+  const statuses = [...state.markets].map(m => r.w[m]?.win).filter(v => v !== undefined);
+  if (!statuses.length) return null;
+  return { anyWin: statuses.some(Boolean), anyLose: statuses.some(v => !v) };
+}
+
+function filteredSortedRows() {
+  const words = state.search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  let rows = DATA.rows.filter(r =>
+    r.w && // masque les listings désactivés côté BackMarket (aucun statut BackBox sur aucun marché)
+    state.grades.has(r.g) &&
+    [...state.markets].some(m => state.markets.has(m)) &&
+    (!r.brand || state.brands.has(r.brand)) &&
+    (() => {
+      if (!state.mainModel && !state.mainCapacity) return true;
+      const { model, capacity } = parseDeviceModelCapacity(r.device);
+      return (!state.mainModel || model === state.mainModel) &&
+             (!state.mainCapacity || capacity === Number(state.mainCapacity));
+    })() &&
+    (words.length === 0 || words.every(w => (r.sku + ' ' + (r.device || '')).toLowerCase().includes(w))) &&
+    (state.backbox === 'all' || (() => {
+      const st = rowBackboxStatus(r);
+      if (!st) return false;
+      return state.backbox === 'yes' ? st.anyWin : st.anyLose;
+    })())
+  );
+  const { sortKey, sortDir } = state;
+  rows = rows.slice().sort((a, b) => {
+    let av, bv;
+    if (sortKey === 'device') { av = a.device || a.sku; bv = b.device || b.sku; return sortDir * av.localeCompare(bv); }
+    if (sortKey === 'sku') { av = a.sku; bv = b.sku; return sortDir * av.localeCompare(bv); }
+    if (sortKey === 'g') { av = a.g; bv = b.g; return sortDir * (av - bv); }
+    av = a.p[sortKey] ?? -1; bv = b.p[sortKey] ?? -1;
+    return sortDir * (av - bv);
+  });
+  return rows;
+}
+
+function renderTable() {
+  const rows = filteredSortedRows();
+  const tbody = document.getElementById('tbody');
+  const emptyState = document.getElementById('empty-state');
+
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    emptyState.classList.add('show');
+  } else {
+    emptyState.classList.remove('show');
+    const frag = document.createDocumentFragment();
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      const marketCells = DATA.markets.map(m => {
+        const shown = state.markets.has(m);
+        const v = r.p[m];
+        if (!shown || v == null) return `<td class="num empty">—</td>`;
+        const w = r.w && r.w[m];
+        let statusHtml = '';
+        if (w) {
+          const cls = w.win ? 'status-win' : 'status-lose';
+          const title = w.win ? 'Vous gagnez la BackBox' : `Pour gagner la BackBox : ${fmtEUR(w.ptw)}`;
+          statusHtml = `<span class="status-dot ${cls}" title="${title}"></span>`;
+        }
+        if (!r.device) return `<td class="num"><span class="price-cell">${fmtEUR(v)}${statusHtml}</span></td>`;
+        return `<td class="num"><span class="price-cell clickable" data-device="${r.device}" data-grade="${r.g}" data-market="${m}" data-price="${v}" title="Voir la marge estimée">${fmtEUR(v)}${statusHtml}</span></td>`;
+      }).join('');
+      const deviceCell = r.device
+        ? `<span class="device-name">${r.device}</span><span class="device-sku">${r.sku}</span>`
+        : `<span class="device-name device-unknown">SKU non identifié</span><span class="device-sku">${r.sku}</span>`;
+      tr.className = 'row-main';
+      tr.innerHTML = `
+        <td class="device"><span class="expand-chevron">▸</span><div class="device-text">${deviceCell}</div></td>
+        <td><span class="grade-pill" style="background:var(--${GRADE_COLORS[r.g]});color:var(--${GRADE_INK[r.g]})">${DATA.gradeLabels[r.g]}</span></td>
+        ${marketCells}
+      `;
+      tr.addEventListener('click', () => toggleDetail(tr, r));
+      tr.querySelectorAll('.price-cell.clickable').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openMarginPopup(cell.dataset.device, Number(cell.dataset.grade), cell.dataset.market, Number(cell.dataset.price));
+        });
+      });
+      frag.appendChild(tr);
+    });
+    tbody.innerHTML = '';
+    tbody.appendChild(frag);
+  }
+
+  document.getElementById('table-foot').textContent = `${rows.length.toLocaleString('fr-FR')} / ${DATA.rows.length.toLocaleString('fr-FR')} lignes`;
+  renderBackboxHistory();
+}
+
+const MARKET_COL_COUNT = () => 2 + DATA.markets.length;
+
+function toggleDetail(tr, r) {
+  const next = tr.nextElementSibling;
+  const alreadyOpen = next && next.classList.contains('row-detail');
+  document.querySelectorAll('.row-detail').forEach(d => d.remove());
+  document.querySelectorAll('.row-main').forEach(m => m.classList.remove('is-expanded'));
+  if (alreadyOpen) return;
+
+  tr.classList.add('is-expanded');
+  const detailRow = document.createElement('tr');
+  detailRow.className = 'row-detail';
+  const marketRows = DATA.markets.map(m => {
+    const price = r.p[m];
+    if (price == null) {
+      return `<tr><td>${MARKET_NAMES[m]}</td><td class="num">—</td><td class="num">—</td><td>Non disponible sur ce marché</td></tr>`;
+    }
+    const w = r.w && r.w[m];
+    if (!w) {
+      return `<tr><td>${MARKET_NAMES[m]}</td><td class="num">—</td><td class="num">${fmtEUR(price)}</td><td class="detail-status status-unknown">Statut BackBox indisponible</td></tr>`;
+    }
+    const statusText = w.win
+      ? 'Vous détenez la BackBox.'
+      : `Entrez un prix supérieur à ${fmtEUR(w.ptw)} pour gagner la BackBox.`;
+    const statusCls = w.win ? 'status-win-text' : 'status-lose-text';
+    return `<tr>
+      <td>${MARKET_NAMES[m]}</td>
+      <td class="num">${fmtEUR(w.ptw)}</td>
+      <td class="num">${fmtEUR(price)}</td>
+      <td class="detail-status ${statusCls}">${statusText}</td>
+    </tr>`;
+  }).join('');
+
+  detailRow.innerHTML = `
+    <td colspan="${MARKET_COL_COUNT()}">
+      <div class="detail-panel">
+        <div class="detail-header">
+          <span class="detail-device">${r.device || 'SKU non identifié'}</span>
+          <span class="detail-sku">${r.sku}</span>
+          <span class="grade-pill" style="background:var(--${GRADE_COLORS[r.g]});color:var(--${GRADE_INK[r.g]})">${DATA.gradeLabels[r.g]}</span>
+        </div>
+        <div class="detail-table-scroll">
+          <table class="detail-table">
+            <thead><tr><th>Marché</th><th class="num">Prix pour remporter la BackBox</th><th class="num">Votre prix</th><th>Statut</th></tr></thead>
+            <tbody>${marketRows}</tbody>
+          </table>
+        </div>
+        <div class="detail-caveat">Le "Prix BackBox" (montant exact du concurrent gagnant) n'est pas exposé par l'API BackMarket — seuls votre prix et le prix pour gagner le sont.</div>
+      </div>
+    </td>
+  `;
+  tr.after(detailRow);
+  detailRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// ---------- pop-up marge (achat -> marge J -> revente estimée M+3 -> marge M+3) ----------
+function openMarginPopup(device, gradeIdx, market, price) {
+  const modal = document.getElementById('margin-modal');
+  const gradeLabel = MARGIN_DATA.grade_map[String(gradeIdx)] || DATA.gradeLabels[gradeIdx];
+  const info = MARGIN_INDEX.get(`${device}|${gradeIdx}`);
+
+  if (!info) {
+    modal.innerHTML = `
+      <button class="margin-close" id="margin-close" aria-label="Fermer">✕</button>
+      <div class="margin-head">
+        <span class="margin-device">${device}</span>
+        <span class="margin-sub">${gradeLabel} · ${MARKET_NAMES[market]}</span>
+      </div>
+      <div class="margin-unavailable">
+        Marge non disponible pour ce modèle/grade — historique KPI200 insuffisant
+        (modèle trop récent sans parent connu, ou grade non couvert : seuls les 3 états
+        « Fonctionnel » les plus élevés ont un équivalent dans KPI200).
+      </div>`;
+  } else {
+    const [, , cahTActuel, varPct, methode] = info;
+    const margeJ = cahTActuel - price;
+    const margeJPct = cahTActuel ? margeJ / cahTActuel * 100 : null;
+    const cahTM3 = cahTActuel * (1 + varPct / 100);
+    const margeM3 = cahTM3 - price;
+    const margeM3Pct = cahTM3 ? margeM3 / cahTM3 * 100 : null;
+    const methodeTxt = methode === 'parent'
+      ? 'modèle trop récent : tendance estimée d\'après son modèle parent'
+      : 'tendance propre à ce modèle';
+
+    const step = (label, value, pct) => `
+      <div class="margin-step">
+        <span class="label">${label}</span>
+        <span class="value">${fmtEUR(value)}${pct != null ? `<span class="margin-pct">${pct >= 0 ? '+' : ''}${pct.toFixed(1)} %</span>` : ''}</span>
+      </div>`;
+    const margeStep = (label, value, pct) => `
+      <div class="margin-step margin ${value >= 0 ? 'positive' : 'negative'}">
+        <span class="label">${label}</span>
+        <span class="value">${fmtEUR(value)}<span class="margin-pct">${pct >= 0 ? '+' : ''}${pct.toFixed(1)} %</span></span>
+      </div>`;
+
+    modal.innerHTML = `
+      <button class="margin-close" id="margin-close" aria-label="Fermer">✕</button>
+      <div class="margin-head">
+        <span class="margin-device">${device}</span>
+        <span class="margin-sub">${gradeLabel} · ${MARKET_NAMES[market]}</span>
+      </div>
+      <div class="margin-steps">
+        ${step('Achat aujourd\'hui (prix reprise)', price, null)}
+        ${step('Prix de vente estimé (CA.HT actuel)', cahTActuel, null)}
+        ${margeStep('Marge à J', margeJ, margeJPct)}
+        <div class="margin-divider">dans ${MARGIN_DATA.window_months} mois (reconditionnement)</div>
+        ${step('Prix de vente estimé à M+3', cahTM3, varPct)}
+        ${margeStep('Marge à M+3 (achat déjà figé)', margeM3, margeM3Pct)}
+      </div>
+      <div class="margin-caveat">
+        Prix de vente = CA.HT moyen KPI200 (60 derniers jours) pour ce modèle/grade ;
+        dépréciation à 3 mois basée sur la même fenêtre calendaire il y a un an
+        (${methodeTxt}). Le COGS reste celui payé à l'achat, il ne bouge pas.
+      </div>`;
+  }
+
+  document.getElementById('margin-close').addEventListener('click', closeMarginPopup);
+  document.getElementById('margin-overlay').classList.add('show');
+}
+
+function closeMarginPopup() {
+  document.getElementById('margin-overlay').classList.remove('show');
+}
+
+document.getElementById('margin-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'margin-overlay') closeMarginPopup();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeMarginPopup();
+});
+
+// ---------- wire up ----------
+document.getElementById('search').addEventListener('input', (e) => {
+  state.search = e.target.value;
+  renderTable();
+});
+document.querySelectorAll('#backbox-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    state.backbox = chip.dataset.backbox;
+    document.querySelectorAll('#backbox-chips .chip').forEach(c => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+    renderTable();
+  });
+});
+initMainModelCapacitySelects();
+initBbModelCapacitySelects();
+initBbDatePicker();
+
+document.getElementById('reset').addEventListener('click', () => {
+  state.search = '';
+  document.getElementById('search').value = '';
+  state.mainModel = ''; state.mainCapacity = '';
+  document.getElementById('main-model-select').value = '';
+  renderMainCapacitySelect();
+  state.grades = new Set(DATA.gradeLabels.map((_, i) => i));
+  state.markets = new Set(DATA.markets);
+  state.brands = new Set(DATA.brands);
+  state.backbox = 'all';
+  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', 'true'));
+  document.querySelectorAll('#backbox-chips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.backbox === 'all' ? 'true' : 'false'));
+  state.bbModel = ''; state.bbCapacity = ''; state.bbRefDate = null; state.bbGranularity = 'week';
+  document.getElementById('bb-model-select').value = '';
+  renderBbCapacitySelect();
+  document.querySelectorAll('#bb-granularity-chips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.gran === 'week' ? 'true' : 'false'));
+  if (window.__syncBbDatePicker) window.__syncBbDatePicker();
+  renderTable();
+});
+
+document.getElementById('meta-updated').textContent = `${DATA.rows.length.toLocaleString('fr-FR')} listings · mis à jour le ${BUILT_AT}`;
+
+renderTiles();
+renderChips();
+renderThead();
+renderTable();
+
+})();
+</script>
+
+<script>
+(function() {
+
+const DATA = __VOLUME_DATA_JSON__;
+const BUILT_AT = "__BUILT_AT__";
+// DATA = { devices: [name,...], grades: [name,...],
+//          rows: [[dateStr, deviceIdx, gradeIdx, count, priceSum, priceCount], ...] }
+// priceCount <= count: certaines commandes (ex: annulées tôt) n'ont pas de prix connu,
+// donc le prix moyen se calcule sur priceSum/priceCount, jamais sur count.
+
+const HOURLY_DATA = __HOURLY_DATA_JSON__;
+// HOURLY_DATA = { days: { "YYYY-MM-DD": [[hour(0-23), deviceIdx, gradeIdx, count, priceSum, priceCount], ...] } }
+// un jour par clé, conservé indéfiniment (pas seulement le jour de génération de la page).
+// deviceIdx/gradeIdx pointent dans DATA.devices/DATA.grades (mêmes index, un seul jeu de chips).
+// Alimente uniquement la vue "Jour" (détail heure par heure d'aujourd'hui) ; les autres
+// périodes (semaine/mois/année) restent sur DATA.rows (granularité jour).
+
+const STATUS_DATA = __STATUS_DATA_JSON__;
+// STATUS_DATA = { grades: [...] (mêmes libellés/ordre que DATA.grades), statuses: [...],
+//                 rows: [[dateStr, gradeIdx, statusIdx, count], ...] }
+// Pas de dimension appareil ici (dataset dédié au funnel de statut, filtrable par
+// période + grade uniquement, pas par recherche appareil).
+const STATUS_GROUP = {
+  MONEY_TRANSFERED: 'success', PAID: 'success', VALIDATED: 'success',
+  CANCELED: 'lost', SUSPENDED: 'lost',
+  NEW: 'in_progress', PENDING: 'in_progress', TO_SEND: 'in_progress', SENT: 'in_progress',
+  RECEIVED: 'in_progress', COUNTER_PROPOSAL: 'in_progress',
+};
+const STATUS_LABEL_FR = {
+  MONEY_TRANSFERED: 'Argent transféré', PAID: 'Payée', RECEIVED: 'Reçue', VALIDATED: 'Validée',
+  COUNTER_PROPOSAL: 'Contre-proposition', SENT: 'Expédiée (client)', TO_SEND: 'À expédier (client)',
+  PENDING: 'En attente', NEW: 'Nouvelle', SUSPENDED: 'Suspendue', CANCELED: 'Annulée',
+};
+
+const PAYMENT_DELAY_DATA = __PAYMENT_DELAY_DATA_JSON__;
+// PAYMENT_DELAY_DATA = { grades: [...] (mêmes libellés que DATA.grades),
+//                         rows: [[creationDateStr, gradeIdx, count, sumDelayDays], ...] }
+// Uniquement les reprises déjà payées : sert à calculer le délai moyen promesse -> paiement.
+
+// index 0 = meilleur état (même ordre et mêmes libellés que l'onglet Prix)
+const GRADE_COLORS = ['g5', 'g4', 'g3', 'g2', 'g1', 'g0'];
+const GRADE_INK = ['g5-ink', 'g4-ink', 'g3-ink', 'g2-ink', 'g1-ink', 'g0-ink'];
+const fmtInt = (n) => n.toLocaleString('fr-FR');
+const fmtEUR = (n) => n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
+
+const state = {
+  granularity: 'week',
+  model: '',    // '' = tous les modèles
+  capacity: '', // '' = toutes capacités
+  grades: new Set(DATA.grades.map((_, i) => i)),
+  view: 'device',
+  sortKey: 'count',
+  sortDir: -1,
+  refDate: null, // "YYYY-MM-DD" choisie au calendrier ; null = aujourd'hui
+};
+
+// ---------- appareils : modèle + capacité séparés (ex: "iPhone 13 128 Go") ----------
+const DEVICE_PARTS = DATA.devices.map(d => {
+  const m = d.match(/^(.*) (\d+) Go$/);
+  return m ? { model: m[1], capacity: Number(m[2]) } : { model: d, capacity: null };
+});
+const ALL_MODELS = [...new Set(DEVICE_PARTS.map(d => d.model))].sort((a, b) => a.localeCompare(b));
+
+function capacitiesFor(model) {
+  const caps = DEVICE_PARTS
+    .filter(d => (!model || d.model === model) && d.capacity != null)
+    .map(d => d.capacity);
+  return [...new Set(caps)].sort((a, b) => a - b);
+}
+
+function initModelCapacitySelects() {
+  const modelSel = document.getElementById('v-model-select');
+  modelSel.innerHTML = `<option value="">Tous les modèles</option>` +
+    ALL_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+  modelSel.addEventListener('change', () => {
+    state.model = modelSel.value;
+    state.capacity = '';
+    renderCapacitySelect();
+    renderAll();
+  });
+
+  document.getElementById('v-capacity-select').addEventListener('change', (e) => {
+    state.capacity = e.target.value;
+    renderAll();
+  });
+  renderCapacitySelect();
+}
+
+function renderCapacitySelect() {
+  const capSel = document.getElementById('v-capacity-select');
+  const caps = capacitiesFor(state.model);
+  capSel.innerHTML = `<option value="">Toutes capacités</option>` +
+    caps.map(c => `<option value="${c}">${c} Go</option>`).join('');
+  capSel.value = caps.includes(Number(state.capacity)) ? state.capacity : '';
+  if (capSel.value !== state.capacity) state.capacity = capSel.value;
+}
+
+// ---------- bucketing helpers ----------
+const MONTH_NAMES = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+const MONTH_NAMES_LONG = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+function isoWeekKey(d) {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - day + 3);
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  return `${date.getUTCFullYear()}-S${String(week).padStart(2, '0')}`;
+}
+function bucketKey(dateStr, gran) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  if (gran === 'day') return dateStr;
+  if (gran === 'week') return isoWeekKey(d);
+  if (gran === 'month') return dateStr.slice(0, 7);
+  return dateStr.slice(0, 4);
+}
+function bucketLabel(key, gran) {
+  if (gran === 'hour') return `${key}h`;
+  if (gran === 'day') {
+    const [y, m, d] = key.split('-');
+    return `${d}/${m}`;
+  }
+  if (gran === 'week') return key.replace('-S', ' S');
+  if (gran === 'month') {
+    const [y, m] = key.split('-');
+    return `${MONTH_NAMES[+m - 1]} ${y.slice(2)}`;
+  }
+  return key;
+}
+
+// ---------- period filter (Jour/Semaine/Mois/Année ancrés sur une date choisie au calendrier) ----------
+function todayUTC() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+function refDateUTC() { return state.refDate || todayUTC(); }
+function periodMatches(dateStr, period) {
+  const ref = refDateUTC();
+  if (period === 'day') return dateStr === ref;
+  if (period === 'week') return isoWeekKey(new Date(dateStr + 'T00:00:00Z')) === isoWeekKey(new Date(ref + 'T00:00:00Z'));
+  if (period === 'month') return dateStr.slice(0, 7) === ref.slice(0, 7);
+  return dateStr.slice(0, 4) === ref.slice(0, 4);
+}
+// À l'intérieur de la période choisie, le graphique détaille au niveau du dessous
+// (jour -> par heure, semaine/mois -> par jour, année -> par mois).
+function subGranularity(period) {
+  if (period === 'day') return hasHourlyForRefDate() ? 'hour' : null;
+  if (period === 'week' || period === 'month') return 'day';
+  return 'month'; // year
+}
+function periodLabel(period) {
+  const ref = refDateUTC();
+  const [y, m, d] = ref.split('-');
+  if (period === 'day') return `${d}/${m}/${y}`;
+  if (period === 'week') return isoWeekKey(new Date(ref + 'T00:00:00Z')).replace('-S', ' S');
+  if (period === 'month') return `${MONTH_NAMES_LONG[+m - 1]} ${y}`;
+  return `Année ${y}`;
+}
+
+// ---------- calendrier ----------
+// conversions pour <input type="week"> (format natif "YYYY-Www", lundi = 1er jour)
+function dateToWeekValue(dateStr) {
+  return isoWeekKey(new Date(dateStr + 'T00:00:00Z')).replace('-S', '-W');
+}
+function weekValueToDate(weekValue) {
+  const [y, w] = weekValue.split('-W').map(Number);
+  const simple = new Date(Date.UTC(y, 0, 1 + (w - 1) * 7));
+  const dow = simple.getUTCDay() || 7;
+  simple.setUTCDate(simple.getUTCDate() + 1 - dow);
+  return simple.toISOString().slice(0, 10);
+}
+
+// Un seul widget visible à la fois, adapté à la granularité active (jour/semaine/mois/année) :
+// plus intuitif que de choisir un jour précis pour représenter "toute l'année" par exemple.
+function initDatePicker() {
+  const dates = DATA.rows.map(r => r[0]).sort();
+  const minDate = dates[0], maxDate = todayUTC();
+
+  const dayInput = document.getElementById('v-ref-date');
+  const weekInput = document.getElementById('v-ref-week');
+  const monthInput = document.getElementById('v-ref-month');
+  const yearSelect = document.getElementById('v-ref-year');
+
+  dayInput.min = minDate; dayInput.max = maxDate;
+  weekInput.min = dateToWeekValue(minDate); weekInput.max = dateToWeekValue(maxDate);
+  monthInput.min = minDate.slice(0, 7); monthInput.max = maxDate.slice(0, 7);
+
+  const years = [];
+  for (let y = +minDate.slice(0, 4); y <= +maxDate.slice(0, 4); y++) years.push(y);
+  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  function syncWidgets() {
+    const ref = refDateUTC();
+    dayInput.value = ref;
+    weekInput.value = dateToWeekValue(ref);
+    monthInput.value = ref.slice(0, 7);
+    yearSelect.value = ref.slice(0, 4);
+    [dayInput, weekInput, monthInput, yearSelect].forEach(el => el.style.display = 'none');
+    ({ day: dayInput, week: weekInput, month: monthInput, year: yearSelect }[state.granularity]).style.display = '';
+  }
+
+  dayInput.addEventListener('change', () => { state.refDate = dayInput.value || null; syncWidgets(); renderAll(); });
+  weekInput.addEventListener('change', () => { if (weekInput.value) { state.refDate = weekValueToDate(weekInput.value); syncWidgets(); renderAll(); } });
+  monthInput.addEventListener('change', () => { if (monthInput.value) { state.refDate = monthInput.value + '-01'; syncWidgets(); renderAll(); } });
+  yearSelect.addEventListener('change', () => { state.refDate = yearSelect.value + '-01-01'; syncWidgets(); renderAll(); });
+  document.getElementById('v-today-btn').addEventListener('click', () => { state.refDate = null; syncWidgets(); renderAll(); });
+
+  window.__syncDatePickers = syncWidgets; // rappelé par setGranularity()
+  syncWidgets();
+}
+
+// ---------- derive filtered rows ----------
+function matchingDeviceIdxs() {
+  if (!state.model && !state.capacity) return null; // null = tous les appareils
+  const set = new Set();
+  DEVICE_PARTS.forEach((d, i) => {
+    if (state.model && d.model !== state.model) return;
+    if (state.capacity && d.capacity !== Number(state.capacity)) return;
+    set.add(i);
+  });
+  return set;
+}
+
+// HOURLY_DATA.days ne couvre que les jours déjà traités par un cycle de rafraîchissement
+// (rien avant la mise en place de ce suivi, et un jour où l'automatisation était en panne
+// peut aussi manquer) — le détail heure par heure est alors indisponible pour ce jour-là.
+function hasHourlyForRefDate() { return Object.prototype.hasOwnProperty.call(HOURLY_DATA.days, refDateUTC()); }
+
+function filteredRows() {
+  const devIdxs = matchingDeviceIdxs();
+  const okDeviceGrade = (r) => (devIdxs === null || devIdxs.has(r[1])) && state.grades.has(r[2]);
+  if (state.granularity === 'day' && hasHourlyForRefDate()) {
+    return HOURLY_DATA.days[refDateUTC()].filter(okDeviceGrade);
+  }
+  return DATA.rows.filter(r => okDeviceGrade(r) && periodMatches(r[0], state.granularity));
+}
+
+// ---------- taux de transformation (par statut de commande) ----------
+function statusFilteredRows() {
+  // pas de dimension appareil dans STATUS_DATA : la recherche appareil ne s'y applique pas.
+  return STATUS_DATA.rows.filter(r => state.grades.has(r[1]) && periodMatches(r[0], state.granularity));
+}
+
+const DISPLAY_GROUP_LABEL = { success: 'Payée', lost: 'Annulée / suspendue' };
+
+function computeConversion() {
+  const rows = statusFilteredRows();
+  const counts = new Array(STATUS_DATA.statuses.length).fill(0);
+  rows.forEach(([, , si, c]) => { counts[si] += c; });
+
+  const grouped = new Map();
+  STATUS_DATA.statuses.forEach((s, i) => {
+    const count = counts[i];
+    if (!count) return;
+    const g = STATUS_GROUP[s];
+    const label = DISPLAY_GROUP_LABEL[g] || STATUS_LABEL_FR[s] || s;
+    const prev = grouped.get(label) || { count: 0, group: g };
+    prev.count += count;
+    grouped.set(label, prev);
+  });
+  const detail = [...grouped.entries()].map(([label, d]) => ({ label, count: d.count, group: d.group }));
+
+  let success = 0, lost = 0, inProgress = 0;
+  detail.forEach(d => {
+    if (d.group === 'success') success += d.count;
+    else if (d.group === 'lost') lost += d.count;
+    else inProgress += d.count;
+  });
+  const concluded = success + lost;
+  return { detail, success, lost, inProgress, concluded, total: success + lost + inProgress, rate: concluded ? (success / concluded) * 100 : null };
+}
+
+function computePaymentDelay() {
+  let count = 0, sum = 0;
+  PAYMENT_DELAY_DATA.rows.forEach(([d, gi, c, s]) => {
+    if (!state.grades.has(gi) || !periodMatches(d, state.granularity)) return;
+    count += c;
+    sum += s;
+  });
+  return { count, avgDays: count ? sum / count : null };
+}
+
+function renderConversion() {
+  const c = computeConversion();
+  const delay = computePaymentDelay();
+
+  document.getElementById('v-stat-total').textContent = fmtInt(c.total);
+
+  document.getElementById('v-stat-paid').textContent = fmtInt(c.success);
+  document.getElementById('v-stat-paid-pct').textContent = c.total
+    ? `${(c.success / c.total * 100).toFixed(1)} % des reprises initiées`
+    : 'Aucune reprise sur cette sélection';
+
+  const delayTile = document.getElementById('v-stat-delay-tile');
+  if (delay.avgDays != null) {
+    delayTile.style.display = '';
+    document.getElementById('v-stat-delay').textContent = `${delay.avgDays.toFixed(1)} j`;
+    document.getElementById('v-stat-delay-sub').textContent = `sur ${fmtInt(delay.count)} reprises déjà payées`;
+  } else {
+    delayTile.style.display = 'none';
+  }
+
+  const tbody = document.getElementById('v-status-tbody');
+  const rows = c.detail.filter(d => d.count > 0).sort((a, b) => b.count - a.count);
+  const maxCount = Math.max(1, ...rows.map(d => d.count));
+  tbody.innerHTML = rows.map(d => {
+    const pct = c.total ? (d.count / c.total) * 100 : 0;
+    const barPct = (d.count / maxCount) * 100;
+    const isLost = d.group === 'lost';
+    return `
+      <tr>
+        <td class="device">${d.label}</td>
+        <td class="num"><div class="bar-cell"><div class="bar-track"><div class="bar-fill${isLost ? ' status-lost' : ''}" style="width:${barPct.toFixed(1)}%"></div></div><span>${fmtInt(d.count)}</span></div></td>
+        <td class="num">${pct.toFixed(1)} %</td>
+      </tr>`;
+  }).join('');
+}
+
+function computeVolumeBuckets(rows) {
+  const gran = subGranularity(state.granularity);
+  const buckets = new Map();
+  rows.forEach(([keyRaw, , , count]) => {
+    const key = gran === 'hour' ? String(keyRaw).padStart(2, '0') : bucketKey(keyRaw, gran);
+    buckets.set(key, (buckets.get(key) || 0) + count);
+  });
+  return [...buckets.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function computePriceBuckets(rows) {
+  const gran = subGranularity(state.granularity);
+  const buckets = new Map(); // key -> {n, sum}
+  rows.forEach(([keyRaw, , , , sum, pcount]) => {
+    const key = gran === 'hour' ? String(keyRaw).padStart(2, '0') : bucketKey(keyRaw, gran);
+    const b = buckets.get(key) || { n: 0, sum: 0 };
+    b.n += pcount; b.sum += sum;
+    buckets.set(key, b);
+  });
+  return [...buckets.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([key, b]) => [key, b.n ? b.sum / b.n : null]);
+}
+
+function computeDeviceTotals(rows) {
+  const totals = new Map();
+  rows.forEach(([, di, , count, sum, pcount]) => {
+    const t = totals.get(di) || { count: 0, sum: 0, pcount: 0 };
+    t.count += count; t.sum += sum; t.pcount += pcount;
+    totals.set(di, t);
+  });
+  return [...totals.entries()].map(([di, t]) => ({ di, name: DATA.devices[di], count: t.count, avgPrice: t.pcount ? t.sum / t.pcount : null }));
+}
+
+function computeGradeTotals(rows) {
+  const totals = new Map();
+  rows.forEach(([, , gi, count, sum, pcount]) => {
+    const t = totals.get(gi) || { count: 0, sum: 0, pcount: 0 };
+    t.count += count; t.sum += sum; t.pcount += pcount;
+    totals.set(gi, t);
+  });
+  return [...totals.entries()].map(([gi, t]) => ({ name: DATA.grades[gi], count: t.count, avgPrice: t.pcount ? t.sum / t.pcount : null }));
+}
+
+// ---------- stat tiles ----------
+function renderTiles() {
+  const rows = filteredRows();
+  const total = rows.reduce((a, r) => a + r[3], 0);
+  const priceSum = rows.reduce((a, r) => a + r[4], 0);
+  const priceCount = rows.reduce((a, r) => a + r[5], 0);
+  const isDay = state.granularity === 'day' && hasHourlyForRefDate();
+  const nbUnits = new Set(rows.map(r => r[0])).size || 1;
+  const devices = computeDeviceTotals(rows);
+
+  const tiles = [
+    { label: 'Reprises', value: fmtInt(total), sub: periodLabel(state.granularity) },
+    isDay
+      ? { label: 'Moyenne / heure', value: (total / nbUnits).toFixed(1), sub: `sur ${nbUnits} heure(s) avec données` }
+      : { label: 'Moyenne / jour', value: (total / nbUnits).toFixed(1), sub: `sur ${nbUnits} jour(s) avec données` },
+    { label: 'Prix moyen', value: priceCount ? fmtEUR(priceSum / priceCount) : '—', sub: 'sur la sélection' },
+    { label: 'Appareils actifs', value: devices.length, sub: (state.model || state.capacity)
+      ? `filtré : ${state.model || 'tous modèles'}${state.capacity ? ` ${state.capacity} Go` : ''}`
+      : 'tous appareils' },
+  ];
+  document.getElementById('v-tiles').innerHTML = tiles.map(t => `
+    <div class="tile">
+      <span class="label">${t.label}</span>
+      <span class="value">${t.value}</span>
+      <span class="sub">${t.sub}</span>
+    </div>`).join('');
+}
+
+// ---------- chart: volume ----------
+function renderChart() {
+  const gran = subGranularity(state.granularity);
+  const svg = document.getElementById('v-chart');
+  const tooltip = document.getElementById('v-tooltip');
+
+  if (!gran) {
+    svg.removeAttribute('width'); svg.removeAttribute('height');
+    svg.setAttribute('viewBox', '0 0 600 60');
+    svg.innerHTML = `<text class="axis-label" x="0" y="30">Pas de détail heure par heure enregistré pour le ${bucketLabel(refDateUTC(), 'day')}.</text>`;
+    return;
+  }
+  const buckets = computeVolumeBuckets(filteredRows());
+
+  const marginL = 44, marginR = 12, marginT = 12, marginB = 30;
+  const baseSlot = (gran === 'hour' || gran === 'day') ? 20 : 90;
+  const barSlot = Math.max(baseSlot, 600 / Math.max(buckets.length, 1));
+  const plotW = buckets.length * barSlot;
+  const H = 220;
+  const plotH = H - marginT - marginB;
+  const W = plotW + marginL + marginR;
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const maxVal = Math.max(1, ...buckets.map(([, c]) => c));
+  const niceMax = Math.ceil(maxVal / 4 / 10) * 10 * 4 || 4;
+  const y = (v) => marginT + plotH - (v / niceMax) * plotH;
+
+  let parts = [];
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = (niceMax / ticks) * i;
+    const yy = y(v);
+    parts.push(`<line class="gridline" x1="${marginL}" x2="${W - marginR}" y1="${yy}" y2="${yy}" />`);
+    parts.push(`<text class="axis-label" x="${marginL - 8}" y="${yy + 3}" text-anchor="end">${Math.round(v)}</text>`);
+  }
+
+  const barW = Math.max(3, barSlot - 4);
+  buckets.forEach(([key, count], i) => {
+    const bx = marginL + i * barSlot + (barSlot - barW) / 2;
+    const by = y(count);
+    const bh = marginT + plotH - by;
+    parts.push(`<rect class="bar" data-key="${key}" data-count="${count}"
+      x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW}" height="${Math.max(0, bh).toFixed(1)}"
+      rx="2" fill="var(--accent)" />`);
+    const maxLabels = Math.max(1, Math.floor(plotW / 46));
+    const showLabel = i % Math.ceil(buckets.length / maxLabels || 1) === 0;
+    if (showLabel) {
+      parts.push(`<text class="axis-label" x="${(bx + barW / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle">${bucketLabel(key, gran)}</text>`);
+    }
+  });
+  parts.push(`<line x1="${marginL}" x2="${W - marginR}" y1="${marginT + plotH}" y2="${marginT + plotH}" stroke="var(--border-2)" stroke-width="1" />`);
+
+  svg.innerHTML = parts.join('');
+  svg.querySelectorAll('.bar').forEach(bar => {
+    bar.addEventListener('mousemove', (e) => {
+      tooltip.innerHTML = `<div class="t-title">${bucketLabel(bar.dataset.key, gran)}</div><div>${fmtInt(+bar.dataset.count)} reprises</div>`;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+      tooltip.classList.add('show');
+    });
+    bar.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+}
+
+// ---------- chart: price curve ----------
+function renderPriceChart() {
+  const gran = subGranularity(state.granularity);
+  const svg = document.getElementById('v-price-chart');
+  const tooltip = document.getElementById('v-tooltip');
+
+  if (!gran) {
+    svg.removeAttribute('width'); svg.removeAttribute('height');
+    svg.setAttribute('viewBox', '0 0 600 60');
+    svg.innerHTML = `<text class="axis-label" x="0" y="30">Pas de détail heure par heure enregistré pour le ${bucketLabel(refDateUTC(), 'day')}.</text>`;
+    return;
+  }
+
+  const points = computePriceBuckets(filteredRows()).filter(([, v]) => v != null);
+  const marginL = 50, marginR = 12, marginT = 16, marginB = 30;
+  const baseSlot = (gran === 'hour' || gran === 'day') ? 20 : 90;
+  const barSlot = Math.max(baseSlot, 600 / Math.max(points.length - 1, 1));
+  const plotW = (points.length - 1) * barSlot;
+  const H = 200;
+  const plotH = H - marginT - marginB;
+  const W = plotW + marginL + marginR;
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  if (points.length < 2) {
+    svg.innerHTML = `<text class="axis-label" x="${marginL}" y="${H / 2}">Pas assez de données sur cette sélection.</text>`;
+    return;
+  }
+
+  const vals = points.map(([, v]) => v);
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  const pad = (maxV - minV) * 0.15 || maxV * 0.1 || 1;
+  const lo = Math.max(0, minV - pad), hi = maxV + pad;
+  const x = (i) => marginL + i * barSlot;
+  const y = (v) => marginT + plotH - ((v - lo) / (hi - lo)) * plotH;
+
+  let parts = [];
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = lo + ((hi - lo) / ticks) * i;
+    const yy = y(v);
+    parts.push(`<line class="gridline" x1="${marginL}" x2="${W - marginR}" y1="${yy}" y2="${yy}" />`);
+    parts.push(`<text class="axis-label" x="${marginL - 8}" y="${yy + 3}" text-anchor="end">${Math.round(v)}€</text>`);
+  }
+
+  const linePts = points.map(([, v], i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const areaPts = `${x(0).toFixed(1)},${y(lo).toFixed(1)} ${linePts} ${x(points.length - 1).toFixed(1)},${y(lo).toFixed(1)}`;
+  parts.push(`<polygon class="line-area" points="${areaPts}" />`);
+  parts.push(`<polyline class="line-path" points="${linePts}" />`);
+
+  points.forEach(([key, v], i) => {
+    const maxLabels = Math.max(1, Math.floor(plotW / 46));
+    const showLabel = i % Math.ceil(points.length / maxLabels || 1) === 0;
+    if (showLabel) {
+      parts.push(`<text class="axis-label" x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle">${bucketLabel(key, gran)}</text>`);
+    }
+    parts.push(`<circle class="line-point" data-key="${key}" data-val="${v.toFixed(2)}" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="7" fill="transparent" stroke="none" />`);
+    parts.push(`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.5" fill="var(--line)" />`);
+  });
+
+  svg.innerHTML = parts.join('');
+  svg.querySelectorAll('.line-point').forEach(pt => {
+    pt.addEventListener('mousemove', (e) => {
+      tooltip.innerHTML = `<div class="t-title">${bucketLabel(pt.dataset.key, gran)}</div><div>${fmtEUR(+pt.dataset.val)} en moyenne</div>`;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+      tooltip.classList.add('show');
+    });
+    pt.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+}
+
+// ---------- breakdown table ----------
+function renderThead() {
+  const cols = state.view === 'device'
+    ? [{ key: 'name', label: 'Appareil' }, { key: 'count', label: 'Reprises', num: true }, { key: 'avgPrice', label: 'Prix moyen', num: true }]
+    : [{ key: 'name', label: 'Grade' }, { key: 'count', label: 'Reprises', num: true }, { key: 'avgPrice', label: 'Prix moyen', num: true }];
+  const row = document.getElementById('v-thead-row');
+  row.innerHTML = cols.map(c => `<th class="${c.num ? 'num' : ''}" data-key="${c.key}">${c.label}<span class="arrow">▾</span></th>`).join('');
+  row.querySelectorAll('th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (state.sortKey === key) state.sortDir *= -1; else { state.sortKey = key; state.sortDir = key === 'name' ? 1 : -1; }
+      row.querySelectorAll('th').forEach(t => t.removeAttribute('aria-sort'));
+      th.setAttribute('aria-sort', state.sortDir === 1 ? 'ascending' : 'descending');
+      renderTable();
+    });
+  });
+}
+
+function renderTable() {
+  const rows = filteredRows();
+  let items = state.view === 'device' ? computeDeviceTotals(rows) : computeGradeTotals(rows);
+  const { sortKey, sortDir } = state;
+  items.sort((a, b) => sortKey === 'name' ? sortDir * a.name.localeCompare(b.name) : sortDir * ((a[sortKey] ?? -1) - (b[sortKey] ?? -1)));
+
+  document.getElementById('v-table-title').textContent = state.view === 'device' ? 'Répartition par appareil' : 'Répartition par grade';
+
+  const tbody = document.getElementById('v-tbody');
+  const emptyState = document.getElementById('v-empty-state');
+  if (!items.length) {
+    tbody.innerHTML = '';
+    emptyState.classList.add('show');
+  } else {
+    emptyState.classList.remove('show');
+    const maxCount = Math.max(...items.map(d => d.count));
+    const frag = document.createDocumentFragment();
+    items.forEach(d => {
+      const tr = document.createElement('tr');
+      const pct = (d.count / maxCount) * 100;
+      const isDevice = state.view === 'device';
+      tr.className = 'row-main' + (isDevice ? ' clickable' : '');
+      tr.innerHTML = `
+        <td class="device">${isDevice ? '<span class="expand-chevron">▸</span>' : ''}${d.name}</td>
+        <td class="num"><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(1)}%"></div></div><span>${fmtInt(d.count)}</span></div></td>
+        <td class="num">${d.avgPrice != null ? fmtEUR(d.avgPrice) : '—'}</td>
+      `;
+      if (isDevice) tr.addEventListener('click', () => toggleDeviceDetail(tr, d, rows));
+      frag.appendChild(tr);
+    });
+    tbody.innerHTML = '';
+    tbody.appendChild(frag);
+  }
+  document.getElementById('v-table-foot').textContent = `${items.length.toLocaleString('fr-FR')} ${state.view === 'device' ? 'appareil(s)' : 'grade(s)'}`;
+}
+
+function toggleDeviceDetail(tr, item, rows) {
+  const next = tr.nextElementSibling;
+  const alreadyOpen = next && next.classList.contains('row-detail');
+  document.querySelectorAll('.row-detail').forEach(d => d.remove());
+  document.querySelectorAll('.row-main.is-expanded').forEach(m => m.classList.remove('is-expanded'));
+  if (alreadyOpen) return;
+
+  tr.classList.add('is-expanded');
+  const byGrade = new Map();
+  rows.forEach(([, di, gi, count, sum, pcount]) => {
+    if (di !== item.di) return;
+    const g = byGrade.get(gi) || { count: 0, sum: 0, pcount: 0 };
+    g.count += count; g.sum += sum; g.pcount += pcount;
+    byGrade.set(gi, g);
+  });
+  const totalCount = [...byGrade.values()].reduce((s, g) => s + g.count, 0);
+  const gradeRows = [...byGrade.entries()]
+    .map(([gi, g]) => ({ gi, count: g.count, avgPrice: g.pcount ? g.sum / g.pcount : null }))
+    .sort((a, b) => a.gi - b.gi);
+
+  const detailRow = document.createElement('tr');
+  detailRow.className = 'row-detail';
+  detailRow.innerHTML = `
+    <td colspan="3">
+      <div class="detail-panel">
+        <div class="detail-table-scroll">
+          <table class="detail-table">
+            <thead><tr><th>Grade</th><th class="num">Reprises</th><th class="num">%</th><th class="num">Prix moyen</th></tr></thead>
+            <tbody>
+              ${gradeRows.map(g => `
+                <tr>
+                  <td><span class="grade-pill" style="background:var(--${GRADE_COLORS[g.gi]});color:var(--${GRADE_INK[g.gi]})">${DATA.grades[g.gi]}</span></td>
+                  <td class="num">${fmtInt(g.count)}</td>
+                  <td class="num">${totalCount ? (g.count / totalCount * 100).toFixed(1) : '0.0'} %</td>
+                  <td class="num">${g.avgPrice != null ? fmtEUR(g.avgPrice) : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </td>
+  `;
+  tr.after(detailRow);
+}
+
+// ---------- wire up ----------
+function renderGradeChips() {
+  const el = document.getElementById('v-grade-chips');
+  el.innerHTML = DATA.grades.map((name, i) => `
+    <button class="chip" data-grade="${i}" aria-pressed="true">
+      <span class="dot" style="background:var(--${GRADE_COLORS[i % GRADE_COLORS.length]})"></span>${name}
+    </button>`).join('');
+  el.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const gi = +chip.dataset.grade;
+      if (state.grades.has(gi)) { state.grades.delete(gi); chip.setAttribute('aria-pressed', 'false'); }
+      else { state.grades.add(gi); chip.setAttribute('aria-pressed', 'true'); }
+      renderAll();
+    });
+  });
+}
+
+function setGranularity(g) {
+  state.granularity = g;
+  document.querySelectorAll('#v-granularity-chips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.gran === g ? 'true' : 'false'));
+  if (window.__syncDatePickers) window.__syncDatePickers();
+  renderAll();
+}
+document.querySelectorAll('#v-granularity-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => setGranularity(chip.dataset.gran));
+});
+initModelCapacitySelects();
+document.querySelectorAll('#v-view-toggle .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    state.view = chip.dataset.view;
+    document.querySelectorAll('#v-view-toggle .chip').forEach(c => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+    state.sortKey = 'count'; state.sortDir = -1;
+    renderThead();
+    renderTable();
+  });
+});
+document.getElementById('v-reset').addEventListener('click', () => {
+  state.model = '';
+  state.capacity = '';
+  document.getElementById('v-model-select').value = '';
+  renderCapacitySelect();
+  state.grades = new Set(DATA.grades.map((_, i) => i));
+  document.querySelectorAll('#v-grade-chips .chip').forEach(c => c.setAttribute('aria-pressed', 'true'));
+  state.refDate = null;
+  setGranularity('week');
+});
+
+function renderAll() {
+  renderTiles();
+  renderChart();
+  renderPriceChart();
+  renderConversion();
+  renderTable();
+}
+
+document.getElementById('v-meta-updated').textContent = `${DATA.devices.length.toLocaleString('fr-FR')} appareils · mis à jour le ${BUILT_AT}`;
+initDatePicker();
+renderGradeChips();
+renderThead();
+setGranularity('week');
+
+})();
+</script>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
