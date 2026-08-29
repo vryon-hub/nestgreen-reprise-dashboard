@@ -2,7 +2,10 @@ name: Daily recap email
 
 on:
   schedule:
-    - cron: '37 6 * * *'
+    # 22:30 UTC = 00:30 heure de Paris (CEST, été). GitHub Actions ne suit pas
+    # le changement d'heure : en hiver (CET, UTC+1) ça tombera à 23:30 Paris
+    # au lieu de 00:30 -> à ajuster manuellement si besoin en octobre/mars.
+    - cron: '30 22 * * *'
   workflow_dispatch: {}
 
 concurrency:
