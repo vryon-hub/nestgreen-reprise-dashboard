@@ -34,14 +34,14 @@ def french_date(d):
     return f"{DAYS[d.weekday()]} {d.day} {MONTHS[d.month - 1]} {d.year}"
 
 
-def build_email_html(by_grade, total_count, total_eur, d):
+def build_email_html(by_device, total_count, total_eur, d):
     date_str = french_date(d)
     rows_html = "".join(f"""
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;">{grade}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;">{device}</td>
         <td style="padding:10px 0;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;text-align:right;font-variant-numeric:tabular-nums;">{count}</td>
         <td style="padding:10px 0;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;text-align:right;font-variant-numeric:tabular-nums;">{eur:,.0f}&nbsp;&euro;</td>
-      </tr>""".replace(",", " ") for grade, count, eur in by_grade)
+      </tr>""".replace(",", " ") for device, count, eur in by_device)
 
     total_str = f"{total_eur:,.0f}".replace(",", " ")
 
@@ -84,7 +84,7 @@ def build_email_html(by_grade, total_count, total_eur, d):
       <td style="padding:12px 28px 28px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td style="padding:0 0 8px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;">Grade</td>
+            <td style="padding:0 0 8px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;">Appareil</td>
             <td style="padding:0 0 8px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Nb</td>
             <td style="padding:0 0 8px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Valeur</td>
           </tr>{rows_html}
@@ -114,16 +114,20 @@ def main():
         print(f"Pas de données pour {yesterday_str} dans hourly_data.json, on saute.")
         return
 
-    grades = json.loads(VOLUME_DATA.read_text(encoding="utf-8"))["grades"]
+    devices = json.loads(VOLUME_DATA.read_text(encoding="utf-8"))["devices"]
 
-    by_grade_idx = {}
-    for _hour, _device_idx, grade_idx, count, price_sum, _price_count in rows:
-        c, e = by_grade_idx.get(grade_idx, (0, 0.0))
-        by_grade_idx[grade_idx] = (c + count, e + price_sum)
+    by_device_idx = {}
+    for _hour, device_idx, _grade_idx, count, price_sum, _price_count in rows:
+        c, e = by_device_idx.get(device_idx, (0, 0.0))
+        by_device_idx[device_idx] = (c + count, e + price_sum)
 
-    by_grade = [(grades[gi], c, e) for gi, (c, e) in sorted(by_grade_idx.items()) if gi < len(grades)]
-    total_count = sum(c for _, c, _ in by_grade)
-    total_eur = sum(e for _, _, e in by_grade)
+    # trié par nombre de reprises décroissant (les appareils les plus repris en premier)
+    by_device = sorted(
+        ((devices[di], c, e) for di, (c, e) in by_device_idx.items() if di < len(devices)),
+        key=lambda row: -row[1],
+    )
+    total_count = sum(c for _, c, _ in by_device)
+    total_eur = sum(e for _, _, e in by_device)
 
     if total_count == 0:
         print(f"0 reprise pour {yesterday_str}, pas d'envoi.")
@@ -134,7 +138,7 @@ def main():
         print(f"Récapitulatif déjà envoyé pour {yesterday_str}.")
         return
 
-    html = build_email_html(by_grade, total_count, total_eur, yesterday)
+    html = build_email_html(by_device, total_count, total_eur, yesterday)
     send_email(f"Nestgreen - Récapitulatif des reprises du {yesterday.strftime('%d/%m/%Y')}", html)
 
     state["last_recap_date"] = yesterday_str
