@@ -30,6 +30,11 @@ python3 fetch_today_hourly.py
 python3 build_hourly_data.py
 python3 merge_today_into_volume.py
 
+# alerte email si 500 reprises atteintes aujourd'hui (heure de Paris) ; ne
+# renvoie qu'une fois/jour (alert_state.json). GMAIL_USER/GMAIL_APP_PASSWORD
+# injectés depuis les Secrets GitHub -> ne pas définir en dur ici.
+python3 check_reprises_alert.py
+
 python3 build_combined_dashboard.py
 
 echo "[$(date -u '+%Y-%m-%d %H:%M:%S UTC')] Rafraîchissement terminé"

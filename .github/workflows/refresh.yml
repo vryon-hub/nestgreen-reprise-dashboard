@@ -29,6 +29,8 @@ jobs:
       - name: Rafraîchir les données et reconstruire le dashboard
         env:
           BM_API_KEY: ${{ secrets.BM_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: bash refresh_cloud.sh
 
       - name: Committer et pousser les fichiers mis à jour
