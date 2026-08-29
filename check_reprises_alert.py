@@ -18,6 +18,8 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from competitor_snapshot import freeze_snapshot
+
 PARIS = ZoneInfo("Europe/Paris")
 HERE = Path(__file__).parent
 
@@ -131,6 +133,10 @@ def main():
     if state.get("last_alert_date") == today:
         print(f"Alerte déjà envoyée aujourd'hui ({today}), {count} reprises actuellement.")
         return
+
+    # fige les prix concurrents (repère/ptw) au moment précis où le seuil est atteint
+    snapshot_path = freeze_snapshot("seuil_500_reprises")
+    print(f"Prix concurrents figés dans {snapshot_path}" if snapshot_path else "Pas d'état sain antérieur à figer.")
 
     html = build_email_html(count, total_eur, now_paris.date())
     send_email(f"Nestgreen - {THRESHOLD} reprises atteintes aujourd'hui", html)

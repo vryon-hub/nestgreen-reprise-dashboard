@@ -24,6 +24,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from check_reprises_alert import send_email  # réutilise l'envoi SMTP déjà validé
+from competitor_snapshot import update_last_known_good, freeze_snapshot
 
 PARIS = ZoneInfo("Europe/Paris")
 HERE = Path(__file__).parent
@@ -101,6 +102,7 @@ def main():
     is_incident = total > 0 and (with_status / total) < ONLINE_RATIO_THRESHOLD
 
     if not is_incident:
+        update_last_known_good()  # état sain -> devient la référence si un incident démarre juste après
         if state.get("listings_offline_alerted"):
             print(f"Taux revenu à la normale ({with_status}/{total}, {pct:.0f}%) -> réarmement de l'alerte.")
             state["listings_offline_alerted"] = False
@@ -112,6 +114,11 @@ def main():
     if state.get("listings_offline_alerted"):
         print(f"Incident toujours en cours ({with_status}/{total}, {pct:.0f}%), déjà alerté, pas de renvoi.")
         return
+
+    # fige les prix concurrents (repère/ptw) du dernier cycle sain, avant que
+    # dashboard_data.json ne finisse par n'avoir plus aucune donnée à comparer
+    snapshot_path = freeze_snapshot("hors_ligne")
+    print(f"Prix concurrents figés dans {snapshot_path}" if snapshot_path else "Pas d'état sain antérieur à figer.")
 
     detected_at = datetime.now(PARIS).strftime("%d/%m/%Y à %H:%M")
     html = build_email_html(with_status, total, pct, detected_at)
