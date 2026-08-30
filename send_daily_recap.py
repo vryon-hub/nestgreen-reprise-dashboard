@@ -39,8 +39,8 @@ def build_email_html(by_device, total_count, total_eur, d):
     rows_html = "".join(f"""
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;">{device}</td>
-        <td style="padding:10px 0;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;text-align:right;font-variant-numeric:tabular-nums;">{count}</td>
-        <td style="padding:10px 0;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;text-align:right;font-variant-numeric:tabular-nums;">{eur:,.0f}&nbsp;&euro;</td>
+        <td style="padding:10px 0 10px 14px;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{count}</td>
+        <td style="padding:10px 0 10px 14px;border-bottom:1px solid #E5E5E0;font-size:14px;color:#242424;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{eur:,.0f}&nbsp;&euro;</td>
       </tr>""".replace(",", " ") for device, count, eur in by_device)
 
     total_str = f"{total_eur:,.0f}".replace(",", " ")
@@ -85,8 +85,8 @@ def build_email_html(by_device, total_count, total_eur, d):
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="padding:0 0 8px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;">Appareil</td>
-            <td style="padding:0 0 8px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Nb</td>
-            <td style="padding:0 0 8px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;text-align:right;">Valeur</td>
+            <td width="46" style="padding:0 0 8px 14px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;text-align:right;white-space:nowrap;">Nb</td>
+            <td width="86" style="padding:0 0 8px 14px;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;text-align:right;white-space:nowrap;">Valeur</td>
           </tr>{rows_html}
         </table>
       </td>
