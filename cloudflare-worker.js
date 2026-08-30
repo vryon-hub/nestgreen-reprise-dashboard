@@ -46,6 +46,10 @@ function bmHeaders(env) {
     Authorization: `Basic ${env.BM_API_KEY}`,
     Accept: 'application/json',
     'Content-Type': 'application/json',
+    // Cloudflare bloque le fetch() natif des Workers avec Error 1010 /
+    // browser_signature_banned sur www.backmarket.fr sans ce header (même piège
+    // que urllib côté Python, cf memoire buyback_backmarket_project.md).
+    'User-Agent': 'curl/8.7.1',
   };
 }
 
