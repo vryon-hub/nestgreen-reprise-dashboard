@@ -1620,12 +1620,12 @@ async function probePrice(btn) {
     });
     const data = await resp.json().catch(() => null);
     if (!resp.ok || !data || !data.ok) {
-      showProbeModal({ error: true, sku, device, grade, market }, null);
+      showProbeModal({ error: true, errorDetail: (data && data.error) || `HTTP ${resp.status}`, sku, device, grade, market }, null);
       return;
     }
     showProbeModal({ sku, device, grade, market }, data, Number(original));
-  } catch {
-    showProbeModal({ error: true, sku, device, grade, market }, null);
+  } catch (err) {
+    showProbeModal({ error: true, errorDetail: String(err && err.message || err), sku, device, grade, market }, null);
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -1645,7 +1645,7 @@ function showProbeModal(meta, r, originalFallback) {
   if (meta.error || !r) {
     modal.innerHTML = head + `
       <div class="margin-unavailable">
-        Échec du sondage — passe par le lien sécurisé (pas le lien GitHub Pages brut) pour utiliser ce bouton, ou réessaie dans un instant.
+        Échec du sondage.<br><span style="font-size:11px;opacity:0.75">${meta.errorDetail || 'Erreur inconnue'}</span>
       </div>`;
   } else if (r.status === 'optimized') {
     const pct = r.original_price ? (r.savings / r.original_price * 100) : null;
