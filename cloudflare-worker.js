@@ -40,14 +40,21 @@ async function getLastRun(env) {
 // n'est en cours, on force un nouveau déclenchement.
 async function watchdog(env) {
   const last = await getLastRun(env);
-  if (!last) return;
+  if (!last) {
+    console.log('watchdog: aucun run trouvé via l\'API GitHub');
+    return;
+  }
 
   const isActive = last.status === 'in_progress' || last.status === 'queued';
+  const ageMinutes = (Date.now() - new Date(last.created_at).getTime()) / 60000;
+  console.log(`watchdog: dernier run ${last.created_at} (status=${last.status}, age=${ageMinutes.toFixed(1)}min)`);
+
   if (isActive) return;
 
-  const ageMinutes = (Date.now() - new Date(last.created_at).getTime()) / 60000;
   if (ageMinutes > STALE_THRESHOLD_MINUTES) {
-    await triggerRefresh(env);
+    console.log('watchdog: run manqué détecté, déclenchement forcé');
+    const resp = await triggerRefresh(env);
+    console.log(`watchdog: dispatch -> status ${resp.status}`);
   }
 }
 
