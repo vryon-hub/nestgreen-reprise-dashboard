@@ -1,0 +1,61 @@
+name: Debug - Lookup listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      product_id:
+        description: "UUID du produit BuyBack à inspecter"
+        required: true
+
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    env:
+      BM_API_KEY: ${{ secrets.BM_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Installer les dépendances
+        run: pip install certifi
+      - name: Chercher les listings de ce produit et leur statut live
+        env:
+          PRODUCT_ID: ${{ inputs.product_id }}
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, ssl, urllib.request
+          import certifi
+
+          api_key = os.environ["BM_API_KEY"]
+          product_id = os.environ["PRODUCT_ID"]
+          ctx = ssl.create_default_context(cafile=certifi.where())
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={
+                  "Authorization": f"Basic {api_key}",
+                  "Accept": "application/json",
+                  "User-Agent": "curl/8.7.1",
+              })
+              with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
+                  return json.loads(resp.read().decode("utf-8"))
+
+          matches = []
+          url = "https://www.backmarket.fr/ws/buyback/v1/listings?pageSize=100"
+          while url:
+              data = fetch(url)
+              for listing in data["results"]:
+                  if listing.get("productId") == product_id:
+                      matches.append(listing)
+              url = data.get("next")
+
+          print(f"{len(matches)} listing(s) trouvés pour productId={product_id}")
+          for listing in matches:
+              lid = listing["id"]
+              print(f"\nlisting_id={lid} sku={listing.get('sku')} grade={listing.get('aestheticGradeCode')}")
+              print(f"  prix actuels (mes annonces) : {listing.get('prices')}")
+              competitors = fetch(f"https://www.backmarket.fr/ws/buyback/v1/competitors/{lid}")
+              print(f"  statut concurrentiel live (à l'instant T) :")
+              for e in competitors:
+                  print(f"    {e['market']}: mon_prix={e['price']['amount']} price_to_win={e['price_to_win']['amount']} je_gagne={e['is_winning']}")
+          PYEOF
