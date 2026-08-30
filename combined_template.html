@@ -296,8 +296,6 @@
   }
   .probe-btn:hover { background: var(--wash); color: var(--ink); }
   .probe-btn:disabled { opacity: 0.55; cursor: default; }
-  .probe-result { display: block; margin-top: 4px; font-size: 11px; color: var(--ink-muted); white-space: normal; }
-  .probe-result.probe-savings { color: var(--status-win); font-weight: 500; }
 
   .table-foot { padding: 10px 18px; font-size: 12px; color: var(--ink-muted); border-top: 1px solid var(--border); }
 
@@ -1569,7 +1567,7 @@ function toggleDetail(tr, r) {
       return `<tr><td>${MARKET_NAMES[m]}</td><td class="num">—</td><td class="num">${fmtEUR(price)}</td><td class="detail-status status-unknown">Statut BackBox indisponible</td></tr>`;
     }
     const probeBtn = (w.win && r.id)
-      ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-original="${price}">Sonder ce prix</button><span class="probe-result" data-probe-result></span>`
+      ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}" data-original="${price}">Sonder ce prix</button>`
       : '';
     const statusText = w.win
       ? `Vous détenez la BackBox.${probeBtn}`
@@ -1610,64 +1608,79 @@ function toggleDetail(tr, r) {
 
 // ---------- sonder le vrai seuil BackBox sur une ligne gagnante ----------
 async function probePrice(btn) {
-  const { listing, market, sku, original } = btn.dataset;
-  const resultEl = btn.nextElementSibling;
+  const { listing, market, sku, device, grade, original } = btn.dataset;
+  const originalLabel = btn.textContent;
   btn.disabled = true;
-  resultEl.textContent = 'Lancement du sondage…';
-  resultEl.className = 'probe-result';
+  btn.textContent = 'Sondage…';
   try {
     const resp = await fetch('/probe-price', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listing_id: listing, market, sku }),
+      body: JSON.stringify({ listing_id: listing, market }),
     });
     const data = await resp.json().catch(() => null);
     if (!resp.ok || !data || !data.ok) {
-      resultEl.textContent = 'Échec — passe par le lien sécurisé (pas le lien GitHub Pages brut) pour utiliser ce bouton.';
-      btn.disabled = false;
+      showProbeModal({ error: true, sku, device, grade, market }, null);
       return;
     }
+    showProbeModal({ sku, device, grade, market }, data, Number(original));
   } catch {
-    resultEl.textContent = 'Échec — passe par le lien sécurisé (pas le lien GitHub Pages brut) pour utiliser ce bouton.';
+    showProbeModal({ error: true, sku, device, grade, market }, null);
+  } finally {
     btn.disabled = false;
-    return;
+    btn.textContent = originalLabel;
   }
-
-  resultEl.textContent = 'Sondage en cours (~30-60s)…';
-  const startedAt = Date.now();
-  for (let i = 0; i < 30; i++) {
-    await new Promise(r => setTimeout(r, 5000));
-    try {
-      const res = await fetch('probe_results.json', { cache: 'no-store' });
-      if (res.ok) {
-        const history = await res.json();
-        const match = [...history].reverse().find(h =>
-          h.listing_id === listing && h.market === market &&
-          new Date(h.ts).getTime() >= startedAt - 15000
-        );
-        if (match) {
-          renderProbeResult(resultEl, match, Number(original));
-          btn.disabled = false;
-          return;
-        }
-      }
-    } catch { /* fichier pas encore là au premier essai, on continue */ }
-  }
-  resultEl.textContent = 'Toujours en cours — recharge la page dans une minute pour voir le résultat.';
-  btn.disabled = false;
 }
 
-function renderProbeResult(el, r, original) {
-  if (r.status === 'optimized') {
-    el.textContent = `Vrai seuil: ${fmtEUR(r.revealed_threshold)} → nouveau prix ${fmtEUR(r.new_price)} (économie ${fmtEUR(r.savings)})`;
-    el.className = 'probe-result probe-savings';
+function showProbeModal(meta, r, originalFallback) {
+  const modal = document.getElementById('margin-modal');
+  const gradeLabel = DATA.gradeLabels[Number(meta.grade)] || '';
+  const head = `
+    <button class="margin-close" id="margin-close" aria-label="Fermer">✕</button>
+    <div class="margin-head">
+      <span class="margin-device">${meta.device || meta.sku}</span>
+      <span class="margin-sub">${gradeLabel} · ${MARKET_NAMES[meta.market]}</span>
+    </div>`;
+
+  if (meta.error || !r) {
+    modal.innerHTML = head + `
+      <div class="margin-unavailable">
+        Échec du sondage — passe par le lien sécurisé (pas le lien GitHub Pages brut) pour utiliser ce bouton, ou réessaie dans un instant.
+      </div>`;
+  } else if (r.status === 'optimized') {
+    const pct = r.original_price ? (r.savings / r.original_price * 100) : null;
+    const step = (label, value) => `
+      <div class="margin-step"><span class="label">${label}</span><span class="value">${fmtEUR(value)}</span></div>`;
+    modal.innerHTML = head + `
+      <div class="margin-steps">
+        ${step('Ancien prix', r.original_price)}
+        ${step('Vrai seuil révélé', r.revealed_threshold)}
+        ${step('Nouveau prix (optimisé)', r.new_price)}
+        <div class="margin-step margin positive">
+          <span class="label">Économie</span>
+          <span class="value">${fmtEUR(r.savings)}${pct != null ? `<span class="margin-pct">-${pct.toFixed(1)} %</span>` : ''}</span>
+        </div>
+      </div>
+      <div class="margin-caveat">Prix mis à jour en direct sur BackMarket — toujours gagnant la BackBox, au seuil réel au lieu de l'ancien prix.</div>`;
   } else if (r.status === 'floor_below_probe') {
-    el.textContent = `Le vrai seuil est encore plus bas que la sonde (${fmtEUR(r.probe_price)}) — prix d'origine restauré, pas encore optimisé.`;
+    modal.innerHTML = head + `
+      <div class="margin-unavailable">
+        Le vrai seuil est encore plus bas que la sonde (${fmtEUR(r.probe_price)}) — prix d'origine (${fmtEUR(r.original_price)}) restauré, pas encore optimisé sur cette ligne.
+      </div>`;
+  } else if (r.status === 'not_winning_already_reliable') {
+    modal.innerHTML = head + `
+      <div class="margin-unavailable">Cette ligne ne gagne plus la BackBox — le seuil affiché est déjà fiable, pas besoin de sonder.</div>`;
   } else if (r.status === 'optimize_failed_reverted') {
-    el.textContent = `Seuil révélé ${fmtEUR(r.revealed_threshold)}, mais l'optimisation a échoué — prix d'origine restauré.`;
+    modal.innerHTML = head + `
+      <div class="margin-unavailable">
+        Seuil révélé ${fmtEUR(r.revealed_threshold)}, mais l'optimisation a échoué — prix d'origine (${fmtEUR(r.original_price)}) restauré.
+      </div>`;
   } else {
-    el.textContent = `Résultat: ${r.status}`;
+    modal.innerHTML = head + `<div class="margin-unavailable">Résultat inattendu: ${r.status}</div>`;
   }
+
+  document.getElementById('margin-close').addEventListener('click', closeMarginPopup);
+  document.getElementById('margin-overlay').classList.add('show');
 }
 
 // ---------- pop-up marge (achat -> marge J -> revente estimée M+3 -> marge M+3) ----------

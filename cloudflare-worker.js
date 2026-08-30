@@ -34,6 +34,82 @@ async function getLastRun(env) {
   return (data.workflow_runs && data.workflow_runs[0]) || null;
 }
 
+// ---------- sondage direct du vrai seuil BackBox (sans passer par GitHub Actions,
+// pour répondre en 1-2s au lieu d'attendre le démarrage d'un runner) ----------
+const BM_HOST = 'www.backmarket.fr';
+const PROBE_DROP_PCT = 0.20;
+const SAFETY_MARGIN_PCT = 0.005;
+const SAFETY_MARGIN_MIN_EUR = 0.50;
+
+function bmHeaders(env) {
+  return {
+    Authorization: `Basic ${env.BM_API_KEY}`,
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+}
+
+async function getCompetitor(listingId, market, env) {
+  const resp = await fetch(`https://${BM_HOST}/ws/buyback/v1/competitors/${listingId}`, {
+    headers: bmHeaders(env),
+  });
+  if (!resp.ok) throw new Error(`competitors HTTP ${resp.status}`);
+  const data = await resp.json();
+  const entry = data.find(e => e.market === market);
+  if (!entry) throw new Error(`marché ${market} absent de la réponse`);
+  return {
+    price: parseFloat(entry.price.amount),
+    priceToWin: parseFloat(entry.price_to_win.amount),
+    isWinning: entry.is_winning,
+  };
+}
+
+async function setPrice(listingId, market, amount, env) {
+  const resp = await fetch(`https://${BM_HOST}/ws/buyback/v1/listings/${listingId}`, {
+    method: 'PUT',
+    headers: bmHeaders(env),
+    body: JSON.stringify({ prices: { [market]: { amount: amount.toFixed(2), currency: 'EUR' } } }),
+  });
+  if (!resp.ok) throw new Error(`PUT prix HTTP ${resp.status}`);
+}
+
+const round2 = n => Math.round(n * 100) / 100;
+
+async function probePriceLive(listingId, market, env) {
+  const before = await getCompetitor(listingId, market, env);
+  if (!before.isWinning) {
+    return { status: 'not_winning_already_reliable', original_price: before.price };
+  }
+
+  const probePrice = round2(before.price * (1 - PROBE_DROP_PCT));
+  await setPrice(listingId, market, probePrice, env);
+  const afterProbe = await getCompetitor(listingId, market, env);
+
+  if (afterProbe.isWinning) {
+    await setPrice(listingId, market, before.price, env);
+    return { status: 'floor_below_probe', original_price: before.price, probe_price: probePrice };
+  }
+
+  const revealed = afterProbe.priceToWin;
+  const margin = Math.max(revealed * SAFETY_MARGIN_PCT, SAFETY_MARGIN_MIN_EUR);
+  const optimized = round2(revealed + margin);
+  await setPrice(listingId, market, optimized, env);
+  const after = await getCompetitor(listingId, market, env);
+
+  if (after.isWinning) {
+    return {
+      status: 'optimized',
+      original_price: before.price,
+      revealed_threshold: revealed,
+      new_price: optimized,
+      savings: round2(before.price - optimized),
+    };
+  }
+
+  await setPrice(listingId, market, before.price, env);
+  return { status: 'optimize_failed_reverted', original_price: before.price, revealed_threshold: revealed };
+}
+
 // Surveillance périodique (Cloudflare Cron Trigger) : compense le cron
 // GitHub Actions qui saute parfois plusieurs cycles sans raison identifiable.
 // Si le dernier run date de plus de STALE_THRESHOLD_MINUTES et qu'aucun run
@@ -90,8 +166,9 @@ export default {
       });
     }
 
-    // Déclenche le sondage/optimisation du vrai seuil BackBox sur UN listing×marché
-    // précis, depuis le bouton "Sonder ce prix" du dashboard (jamais en masse).
+    // Sonde/optimise le vrai seuil BackBox sur UN listing×marché précis, en direct
+    // (pas de passage par GitHub Actions -> réponse en 1-2s au lieu de ~1 min).
+    // Toujours déclenché manuellement depuis le bouton "Sonder ce prix", jamais en masse.
     if (url.pathname === '/probe-price' && request.method === 'POST') {
       let payload;
       try {
@@ -102,31 +179,24 @@ export default {
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      const { listing_id, market, sku } = payload || {};
+      const { listing_id, market } = payload || {};
       if (!listing_id || !market) {
         return new Response(JSON.stringify({ ok: false, error: 'listing_id et market requis' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      const ghResp = await fetch(
-        `https://api.github.com/repos/${REPO}/actions/workflows/probe-floor.yml/dispatches`,
-        {
-          method: 'POST',
-          headers: githubHeaders(env),
-          body: JSON.stringify({ ref: 'main', inputs: { listing_id, market, sku: sku || '' } }),
-        }
-      );
-      if (ghResp.status === 204) {
-        return new Response(JSON.stringify({ ok: true }), {
+      try {
+        const result = await probePriceLive(listing_id, market, env);
+        return new Response(JSON.stringify({ ok: true, ...result }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ ok: false, error: String(err && err.message || err) }), {
+          status: 502,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      const errText = await ghResp.text();
-      return new Response(JSON.stringify({ ok: false, status: ghResp.status, error: errText }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' },
-      });
     }
 
     const upstream = 'https://vryon-hub.github.io/nestgreen-reprise-dashboard' + url.pathname + url.search;
