@@ -38,8 +38,6 @@ async function getLastRun(env) {
 // pour répondre en 1-2s au lieu d'attendre le démarrage d'un runner) ----------
 const BM_HOST = 'www.backmarket.fr';
 const PROBE_DROP_PCT = 0.20;
-const SAFETY_MARGIN_PCT = 0.005;
-const SAFETY_MARGIN_MIN_EUR = 0.50;
 
 function bmHeaders(env) {
   return {
@@ -79,39 +77,27 @@ async function setPrice(listingId, market, amount, env) {
 
 const round2 = n => Math.round(n * 100) / 100;
 
+// Simulation brute : pousse le prix à -20% et renvoie tel quel ce que BackMarket
+// répond (price_to_win, is_winning) -> aucune décision automatique (ni retour en
+// arrière, ni optimisation) : le prix reste au niveau simulé, à l'utilisateur de
+// décider ensuite quoi en faire (le garder, le baisser encore, le remonter).
 async function probePriceLive(listingId, market, env) {
   const before = await getCompetitor(listingId, market, env);
   if (!before.isWinning) {
-    return { status: 'not_winning_already_reliable', original_price: before.price };
+    return { status: 'not_winning_already_reliable', original_price: before.price, price_to_win: before.priceToWin };
   }
 
   const probePrice = round2(before.price * (1 - PROBE_DROP_PCT));
   await setPrice(listingId, market, probePrice, env);
-  const afterProbe = await getCompetitor(listingId, market, env);
-
-  if (afterProbe.isWinning) {
-    await setPrice(listingId, market, before.price, env);
-    return { status: 'floor_below_probe', original_price: before.price, probe_price: probePrice };
-  }
-
-  const revealed = afterProbe.priceToWin;
-  const margin = Math.max(revealed * SAFETY_MARGIN_PCT, SAFETY_MARGIN_MIN_EUR);
-  const optimized = round2(revealed + margin);
-  await setPrice(listingId, market, optimized, env);
   const after = await getCompetitor(listingId, market, env);
 
-  if (after.isWinning) {
-    return {
-      status: 'optimized',
-      original_price: before.price,
-      revealed_threshold: revealed,
-      new_price: optimized,
-      savings: round2(before.price - optimized),
-    };
-  }
-
-  await setPrice(listingId, market, before.price, env);
-  return { status: 'optimize_failed_reverted', original_price: before.price, revealed_threshold: revealed };
+  return {
+    status: 'simulated',
+    original_price: before.price,
+    new_price: probePrice,
+    price_to_win: after.priceToWin,
+    is_winning: after.isWinning,
+  };
 }
 
 // Surveillance périodique (Cloudflare Cron Trigger) : compense le cron

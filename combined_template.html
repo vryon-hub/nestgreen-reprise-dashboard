@@ -1567,7 +1567,7 @@ function toggleDetail(tr, r) {
       return `<tr><td>${MARKET_NAMES[m]}</td><td class="num">—</td><td class="num">${fmtEUR(price)}</td><td class="detail-status status-unknown">Statut BackBox indisponible</td></tr>`;
     }
     const probeBtn = (w.win && r.id)
-      ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}" data-original="${price}">Sonder ce prix</button>`
+      ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}" data-original="${price}">Simuler -20%</button>`
       : '';
     const statusText = w.win
       ? `Vous détenez la BackBox.${probeBtn}`
@@ -1595,7 +1595,7 @@ function toggleDetail(tr, r) {
             <tbody>${marketRows}</tbody>
           </table>
         </div>
-        <div class="detail-caveat">Le "Prix BackBox" (montant exact du concurrent gagnant) n'est pas exposé par l'API BackMarket — seuls votre prix et le prix pour gagner le sont. Quand vous gagnez déjà, ce seuil reste caché ; "Sonder ce prix" baisse temporairement le prix (~20%, quelques secondes) pour le révéler, puis remonte juste au-dessus.</div>
+        <div class="detail-caveat">Le "Prix BackBox" (montant exact du concurrent gagnant) n'est pas exposé par l'API BackMarket — seuls votre prix et le prix pour gagner le sont. Quand vous gagnez déjà, ce seuil reste caché ; "Simuler -20%" pousse réellement ce prix sur BackMarket et affiche le résultat (pas de retour en arrière automatique — c'est à vous de décider du prix final ensuite).</div>
       </div>
     </td>
   `;
@@ -1647,34 +1647,25 @@ function showProbeModal(meta, r, originalFallback) {
       <div class="margin-unavailable">
         Échec du sondage.<br><span style="font-size:11px;opacity:0.75">${meta.errorDetail || 'Erreur inconnue'}</span>
       </div>`;
-  } else if (r.status === 'optimized') {
-    const pct = r.original_price ? (r.savings / r.original_price * 100) : null;
+  } else if (r.status === 'simulated') {
     const step = (label, value) => `
       <div class="margin-step"><span class="label">${label}</span><span class="value">${fmtEUR(value)}</span></div>`;
+    const winCls = r.is_winning ? 'positive' : 'negative';
+    const winLabel = r.is_winning ? 'Oui, toujours gagnant' : 'Non, perdant à ce prix';
     modal.innerHTML = head + `
       <div class="margin-steps">
         ${step('Ancien prix', r.original_price)}
-        ${step('Vrai seuil révélé', r.revealed_threshold)}
-        ${step('Nouveau prix (optimisé)', r.new_price)}
-        <div class="margin-step margin positive">
-          <span class="label">Économie</span>
-          <span class="value">${fmtEUR(r.savings)}${pct != null ? `<span class="margin-pct">-${pct.toFixed(1)} %</span>` : ''}</span>
+        ${step('Nouveau prix simulé (-20%)', r.new_price)}
+        ${step('Price to win renvoyé par BackMarket', r.price_to_win)}
+        <div class="margin-step margin ${winCls}">
+          <span class="label">Toujours gagnant ?</span>
+          <span class="value" style="font-size:14px">${winLabel}</span>
         </div>
       </div>
-      <div class="margin-caveat">Prix mis à jour en direct sur BackMarket — toujours gagnant la BackBox, au seuil réel au lieu de l'ancien prix.</div>`;
-  } else if (r.status === 'floor_below_probe') {
-    modal.innerHTML = head + `
-      <div class="margin-unavailable">
-        Le vrai seuil est encore plus bas que la sonde (${fmtEUR(r.probe_price)}) — prix d'origine (${fmtEUR(r.original_price)}) restauré, pas encore optimisé sur cette ligne.
-      </div>`;
+      <div class="margin-caveat">Le prix a été poussé à ${fmtEUR(r.new_price)} sur BackMarket (pas de retour en arrière automatique) — si "price to win" est encore égal au nouveau prix, le vrai seuil est plus bas et pas encore révélé ; sinon c'est le vrai seuil concurrent.</div>`;
   } else if (r.status === 'not_winning_already_reliable') {
     modal.innerHTML = head + `
-      <div class="margin-unavailable">Cette ligne ne gagne plus la BackBox — le seuil affiché est déjà fiable, pas besoin de sonder.</div>`;
-  } else if (r.status === 'optimize_failed_reverted') {
-    modal.innerHTML = head + `
-      <div class="margin-unavailable">
-        Seuil révélé ${fmtEUR(r.revealed_threshold)}, mais l'optimisation a échoué — prix d'origine (${fmtEUR(r.original_price)}) restauré.
-      </div>`;
+      <div class="margin-unavailable">Cette ligne ne gagne pas la BackBox — le seuil affiché (${fmtEUR(r.price_to_win)}) est déjà fiable, pas besoin de sonder.</div>`;
   } else {
     modal.innerHTML = head + `<div class="margin-unavailable">Résultat inattendu: ${r.status}</div>`;
   }
