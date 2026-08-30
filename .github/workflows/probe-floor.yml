@@ -1,0 +1,47 @@
+name: Sonder le vrai seuil BackBox
+
+on:
+  workflow_dispatch:
+    inputs:
+      listing_id:
+        description: "UUID du listing BuyBack"
+        required: true
+      market:
+        description: "Code marché (DE/ES/FR/IT...)"
+        required: true
+      sku:
+        description: "SKU (juste pour l'affichage/log)"
+        required: false
+
+concurrency:
+  group: probe-floor
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      BM_API_KEY: ${{ secrets.BM_API_KEY }}
+      LISTING_ID: ${{ inputs.listing_id }}
+      MARKET: ${{ inputs.market }}
+      SKU: ${{ inputs.sku }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Installer les dépendances
+        run: pip install certifi
+      - name: Sonder et optimiser le prix
+        run: python3 probe_winning_floor.py
+      - name: Committer et pousser le résultat
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add probe_results.json
+          git diff --staged --quiet && echo "Rien à committer" || git commit -m "probe: résultat sondage $LISTING_ID/$MARKET"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && break
+            echo "push refusé (tentative $i), nouvelle tentative dans 10s..."
+            sleep 10
+          done

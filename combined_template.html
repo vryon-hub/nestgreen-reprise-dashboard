@@ -290,6 +290,14 @@
   .detail-status.status-lose-text { color: var(--status-lose); }
   .detail-status.status-unknown { color: var(--ink-muted); font-style: italic; }
   .detail-caveat { margin-top: 10px; font-size: 11.5px; color: var(--ink-muted); font-style: italic; }
+  .probe-btn {
+    margin-left: 8px; font-size: 11px; padding: 3px 9px; border-radius: 5px;
+    border: 1px solid var(--border-2); background: var(--card); color: var(--ink-2); cursor: pointer;
+  }
+  .probe-btn:hover { background: var(--wash); color: var(--ink); }
+  .probe-btn:disabled { opacity: 0.55; cursor: default; }
+  .probe-result { display: block; margin-top: 4px; font-size: 11px; color: var(--ink-muted); white-space: normal; }
+  .probe-result.probe-savings { color: var(--status-win); font-weight: 500; }
 
   .table-foot { padding: 10px 18px; font-size: 12px; color: var(--ink-muted); border-top: 1px solid var(--border); }
 
@@ -1560,8 +1568,11 @@ function toggleDetail(tr, r) {
     if (!w) {
       return `<tr><td>${MARKET_NAMES[m]}</td><td class="num">—</td><td class="num">${fmtEUR(price)}</td><td class="detail-status status-unknown">Statut BackBox indisponible</td></tr>`;
     }
+    const probeBtn = (w.win && r.id)
+      ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-original="${price}">Sonder ce prix</button><span class="probe-result" data-probe-result></span>`
+      : '';
     const statusText = w.win
-      ? 'Vous détenez la BackBox.'
+      ? `Vous détenez la BackBox.${probeBtn}`
       : `Entrez un prix supérieur à ${fmtEUR(w.ptw)} pour gagner la BackBox.`;
     const statusCls = w.win ? 'status-win-text' : 'status-lose-text';
     return `<tr>
@@ -1586,12 +1597,77 @@ function toggleDetail(tr, r) {
             <tbody>${marketRows}</tbody>
           </table>
         </div>
-        <div class="detail-caveat">Le "Prix BackBox" (montant exact du concurrent gagnant) n'est pas exposé par l'API BackMarket — seuls votre prix et le prix pour gagner le sont.</div>
+        <div class="detail-caveat">Le "Prix BackBox" (montant exact du concurrent gagnant) n'est pas exposé par l'API BackMarket — seuls votre prix et le prix pour gagner le sont. Quand vous gagnez déjà, ce seuil reste caché ; "Sonder ce prix" baisse temporairement le prix (~20%, quelques secondes) pour le révéler, puis remonte juste au-dessus.</div>
       </div>
     </td>
   `;
   tr.after(detailRow);
+  detailRow.querySelectorAll('.probe-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); probePrice(btn); });
+  });
   detailRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// ---------- sonder le vrai seuil BackBox sur une ligne gagnante ----------
+async function probePrice(btn) {
+  const { listing, market, sku, original } = btn.dataset;
+  const resultEl = btn.nextElementSibling;
+  btn.disabled = true;
+  resultEl.textContent = 'Lancement du sondage…';
+  resultEl.className = 'probe-result';
+  try {
+    const resp = await fetch('/probe-price', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: listing, market, sku }),
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data || !data.ok) {
+      resultEl.textContent = 'Échec — passe par le lien sécurisé (pas le lien GitHub Pages brut) pour utiliser ce bouton.';
+      btn.disabled = false;
+      return;
+    }
+  } catch {
+    resultEl.textContent = 'Échec — passe par le lien sécurisé (pas le lien GitHub Pages brut) pour utiliser ce bouton.';
+    btn.disabled = false;
+    return;
+  }
+
+  resultEl.textContent = 'Sondage en cours (~30-60s)…';
+  const startedAt = Date.now();
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+    try {
+      const res = await fetch('probe_results.json', { cache: 'no-store' });
+      if (res.ok) {
+        const history = await res.json();
+        const match = [...history].reverse().find(h =>
+          h.listing_id === listing && h.market === market &&
+          new Date(h.ts).getTime() >= startedAt - 15000
+        );
+        if (match) {
+          renderProbeResult(resultEl, match, Number(original));
+          btn.disabled = false;
+          return;
+        }
+      }
+    } catch { /* fichier pas encore là au premier essai, on continue */ }
+  }
+  resultEl.textContent = 'Toujours en cours — recharge la page dans une minute pour voir le résultat.';
+  btn.disabled = false;
+}
+
+function renderProbeResult(el, r, original) {
+  if (r.status === 'optimized') {
+    el.textContent = `Vrai seuil: ${fmtEUR(r.revealed_threshold)} → nouveau prix ${fmtEUR(r.new_price)} (économie ${fmtEUR(r.savings)})`;
+    el.className = 'probe-result probe-savings';
+  } else if (r.status === 'floor_below_probe') {
+    el.textContent = `Le vrai seuil est encore plus bas que la sonde (${fmtEUR(r.probe_price)}) — prix d'origine restauré, pas encore optimisé.`;
+  } else if (r.status === 'optimize_failed_reverted') {
+    el.textContent = `Seuil révélé ${fmtEUR(r.revealed_threshold)}, mais l'optimisation a échoué — prix d'origine restauré.`;
+  } else {
+    el.textContent = `Résultat: ${r.status}`;
+  }
 }
 
 // ---------- pop-up marge (achat -> marge J -> revente estimée M+3 -> marge M+3) ----------

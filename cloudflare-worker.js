@@ -90,6 +90,45 @@ export default {
       });
     }
 
+    // Déclenche le sondage/optimisation du vrai seuil BackBox sur UN listing×marché
+    // précis, depuis le bouton "Sonder ce prix" du dashboard (jamais en masse).
+    if (url.pathname === '/probe-price' && request.method === 'POST') {
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ ok: false, error: 'JSON invalide' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      const { listing_id, market, sku } = payload || {};
+      if (!listing_id || !market) {
+        return new Response(JSON.stringify({ ok: false, error: 'listing_id et market requis' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      const ghResp = await fetch(
+        `https://api.github.com/repos/${REPO}/actions/workflows/probe-floor.yml/dispatches`,
+        {
+          method: 'POST',
+          headers: githubHeaders(env),
+          body: JSON.stringify({ ref: 'main', inputs: { listing_id, market, sku: sku || '' } }),
+        }
+      );
+      if (ghResp.status === 204) {
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      const errText = await ghResp.text();
+      return new Response(JSON.stringify({ ok: false, status: ghResp.status, error: errText }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const upstream = 'https://vryon-hub.github.io/nestgreen-reprise-dashboard' + url.pathname + url.search;
     const resp = await fetch(upstream, { cf: { cacheTtl: 0 } });
     const newResp = new Response(resp.body, resp);

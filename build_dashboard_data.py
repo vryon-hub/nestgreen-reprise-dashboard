@@ -71,6 +71,7 @@ def main():
         if brand:
             brands.add(brand)
         row = {
+            'id': l['id'],
             'sku': l['sku'] or 'pas de SKU (BackMarket)',
             'brand': brand,
             'device': device,
