@@ -41,25 +41,36 @@ jobs:
                   return json.loads(resp.read().decode("utf-8"))
 
           found = None
+          matches_by_product = []
+          all_listings = []
           url = "https://www.backmarket.fr/ws/buyback/v1/listings?pageSize=100"
           while url:
               data = fetch(url)
+              all_listings.extend(data["results"])
               for listing in data["results"]:
                   if listing["id"] == listing_id:
                       found = listing
-                      break
-              if found:
-                  break
+                  if listing.get("productId") == listing_id:
+                      matches_by_product.append(listing)
               url = data.get("next")
 
-          if not found:
-              print(f"Listing {listing_id} introuvable dans les {len(data.get('results', []))} listings du compte.")
-          else:
-              print(f"Listing trouvé : sku={found.get('sku')} productId={found.get('productId')} grade={found.get('aestheticGradeCode')}")
-              print(f"Mes prix : {found.get('prices')}")
+          print(f"{len(all_listings)} listings au total sur le compte.")
 
-          competitors = fetch(f"https://www.backmarket.fr/ws/buyback/v1/competitors/{listing_id}")
-          print("Statut concurrentiel par marché :")
-          for e in competitors:
-              print(f"  {e['market']}: mon_prix={e['price']['amount']} price_to_win={e['price_to_win']['amount']} je_gagne={e['is_winning']}")
+          if found:
+              print(f"Trouvé par listing_id : sku={found.get('sku')} productId={found.get('productId')} grade={found.get('aestheticGradeCode')}")
+              print(f"Mes prix : {found.get('prices')}")
+              competitors = fetch(f"https://www.backmarket.fr/ws/buyback/v1/competitors/{listing_id}")
+              print("Statut concurrentiel par marché :")
+              for e in competitors:
+                  print(f"  {e['market']}: mon_prix={e['price']['amount']} price_to_win={e['price_to_win']['amount']} je_gagne={e['is_winning']}")
+          elif matches_by_product:
+              print(f"Pas de listing avec cet ID, mais {len(matches_by_product)} listing(s) partagent ce productId :")
+              for listing in matches_by_product:
+                  lid = listing["id"]
+                  print(f"  listing_id={lid} sku={listing.get('sku')} grade={listing.get('aestheticGradeCode')} prix={listing.get('prices')}")
+                  competitors = fetch(f"https://www.backmarket.fr/ws/buyback/v1/competitors/{lid}")
+                  for e in competitors:
+                      print(f"    {e['market']}: mon_prix={e['price']['amount']} price_to_win={e['price_to_win']['amount']} je_gagne={e['is_winning']}")
+          else:
+              print(f"ID {listing_id} introuvable, ni comme listing_id ni comme productId, parmi les {len(all_listings)} listings.")
           PYEOF
