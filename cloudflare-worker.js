@@ -76,6 +76,7 @@ async function setPrice(listingId, market, amount, env) {
 }
 
 const round2 = n => Math.round(n * 100) / 100;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // Simulation brute : pousse le prix à -20% et renvoie tel quel ce que BackMarket
 // répond (price_to_win, is_winning) -> aucune décision automatique (ni retour en
@@ -89,6 +90,10 @@ async function probePriceLive(listingId, market, env) {
 
   const probePrice = round2(before.price * (1 - PROBE_DROP_PCT));
   await setPrice(listingId, market, probePrice, env);
+  // Laisse le temps à BackMarket de propager le nouveau prix avant de relire le
+  // statut concurrentiel -> sans ce délai, la lecture immédiate renvoyait parfois
+  // encore l'ancien prix/seuil/statut (bug identifié le 31/08/2026).
+  await sleep(1500);
   const after = await getCompetitor(listingId, market, env);
 
   return {
