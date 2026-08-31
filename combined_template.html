@@ -1516,8 +1516,10 @@ function renderTable() {
           const title = w.win ? 'Vous gagnez la BackBox' : `Pour gagner la BackBox : ${fmtEUR(w.ptw)}`;
           statusHtml = `<span class="status-dot ${cls}" title="${title}"></span>`;
         }
-        if (!r.device) return `<td class="num"><span class="price-cell">${fmtEUR(v)}${statusHtml}</span></td>`;
-        return `<td class="num"><span class="price-cell clickable" data-device="${r.device}" data-grade="${r.g}" data-market="${m}" data-price="${v}" title="Voir la marge estimée">${fmtEUR(v)}${statusHtml}</span></td>`;
+        // Popup "marge estimée" désactivée temporairement (à retravailler) —
+        // toutes les cellules sont non-cliquables pour l'instant, pas seulement
+        // celles sans device identifié.
+        return `<td class="num"><span class="price-cell">${fmtEUR(v)}${statusHtml}</span></td>`;
       }).join('');
       const deviceCell = r.device
         ? `<span class="device-name">${r.device}</span><span class="device-sku">${r.sku}</span>`
