@@ -105,6 +105,33 @@ async function probePriceLive(listingId, market, env) {
   };
 }
 
+const CLAIM_MARGIN_PCT = 0.005;
+const CLAIM_MARGIN_MIN_EUR = 0.50;
+
+// Reproduit le bouton "Récupérer la BackBox" du Seller Center : pousse le prix
+// juste au-dessus du price_to_win affiché pour gagner la BackBox, en un clic.
+async function claimBackBox(listingId, market, env) {
+  const before = await getCompetitor(listingId, market, env);
+  if (before.isWinning) {
+    return { status: 'already_winning', price: before.price, price_to_win: before.priceToWin };
+  }
+
+  const margin = Math.max(before.priceToWin * CLAIM_MARGIN_PCT, CLAIM_MARGIN_MIN_EUR);
+  const newPrice = round2(before.priceToWin + margin);
+  await setPrice(listingId, market, newPrice, env);
+  await sleep(1500);
+  const after = await getCompetitor(listingId, market, env);
+
+  return {
+    status: after.isWinning ? 'claimed' : 'claim_failed',
+    original_price: before.price,
+    price_to_win: before.priceToWin,
+    new_price: newPrice,
+    is_winning: after.isWinning,
+    price_to_win_after: after.priceToWin,
+  };
+}
+
 // Surveillance périodique (Cloudflare Cron Trigger) : compense le cron
 // GitHub Actions qui saute parfois plusieurs cycles sans raison identifiable.
 // Si le dernier run date de plus de STALE_THRESHOLD_MINUTES et qu'aucun run
@@ -183,6 +210,38 @@ export default {
       }
       try {
         const result = await probePriceLive(listing_id, market, env);
+        return new Response(JSON.stringify({ ok: true, ...result }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ ok: false, error: String(err && err.message || err) }), {
+          status: 502,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Reproduit le bouton "Récupérer la BackBox" du Seller Center : pousse le prix
+    // juste au-dessus du seuil pour gagner, en un clic depuis le dashboard.
+    if (url.pathname === '/claim-backbox' && request.method === 'POST') {
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ ok: false, error: 'JSON invalide' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      const { listing_id, market } = payload || {};
+      if (!listing_id || !market) {
+        return new Response(JSON.stringify({ ok: false, error: 'listing_id et market requis' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      try {
+        const result = await claimBackBox(listing_id, market, env);
         return new Response(JSON.stringify({ ok: true, ...result }), {
           headers: { 'Content-Type': 'application/json' },
         });
