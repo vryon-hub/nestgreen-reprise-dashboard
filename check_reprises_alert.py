@@ -93,19 +93,20 @@ def build_email_html(count, total_eur, d):
 </div>"""
 
 
-def send_email(subject, html):
+def send_email(subject, html, cc=CC):
     user = os.environ["GMAIL_USER"]
     password = os.environ["GMAIL_APP_PASSWORD"]
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = user
     msg["To"] = RECIPIENT
-    msg["Cc"] = CC
+    msg["Cc"] = cc
     msg.attach(MIMEText(html, "html", "utf-8"))
+    cc_list = [addr.strip() for addr in cc.split(",")]
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
         server.login(user, password)
-        server.sendmail(user, [RECIPIENT, CC], msg.as_string())
+        server.sendmail(user, [RECIPIENT, *cc_list], msg.as_string())
 
 
 def main():

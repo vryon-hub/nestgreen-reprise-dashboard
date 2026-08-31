@@ -16,7 +16,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from check_reprises_alert import send_email  # réutilise l'envoi SMTP déjà validé
+from check_reprises_alert import send_email, CC  # réutilise l'envoi SMTP déjà validé
+
+DAILY_RECAP_CC = f"{CC},g.toure@nest.green"
 
 PARIS = ZoneInfo("Europe/Paris")
 HERE = Path(__file__).parent
@@ -139,7 +141,7 @@ def main():
         return
 
     html = build_email_html(by_device, total_count, total_eur, yesterday)
-    send_email(f"Nestgreen - Récapitulatif des reprises du {yesterday.strftime('%d/%m/%Y')}", html)
+    send_email(f"Nestgreen - Récapitulatif des reprises du {yesterday.strftime('%d/%m/%Y')}", html, cc=DAILY_RECAP_CC)
 
     state["last_recap_date"] = yesterday_str
     STATE_PATH.write_text(json.dumps(state), encoding="utf-8")
