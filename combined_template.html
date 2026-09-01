@@ -1568,7 +1568,7 @@ function toggleDetail(tr, r) {
     if (!w) {
       return `<tr><td>${MARKET_NAMES[m]}</td><td class="num">—</td><td class="num">${fmtEUR(price)}</td><td class="detail-status status-unknown">Statut BackBox indisponible</td></tr>`;
     }
-    const probeBtn = (w.win && r.id)
+    const probeBtn = r.id
       ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}" data-original="${price}">Simuler -20%</button>`
       : '';
     const claimBtn = (!w.win && r.id)
@@ -1576,7 +1576,7 @@ function toggleDetail(tr, r) {
       : '';
     const statusText = w.win
       ? `Vous détenez la BackBox.${probeBtn}`
-      : `Entrez un prix supérieur à ${fmtEUR(w.ptw)} pour gagner la BackBox.${claimBtn}`;
+      : `Entrez un prix supérieur à ${fmtEUR(w.ptw)} pour gagner la BackBox.${claimBtn}${probeBtn}`;
     const statusCls = w.win ? 'status-win-text' : 'status-lose-text';
     return `<tr>
       <td>${MARKET_NAMES[m]}</td>
@@ -1681,9 +1681,6 @@ function showProbeModal(meta, r, originalFallback) {
         </div>
       </div>
       <div class="margin-caveat">Le prix a été poussé à ${fmtEUR(r.new_price)} sur BackMarket (pas de retour en arrière automatique) — si "price to win" est encore égal au nouveau prix, le vrai seuil est plus bas et pas encore révélé ; sinon c'est le vrai seuil concurrent.</div>`;
-  } else if (r.status === 'not_winning_already_reliable') {
-    modal.innerHTML = head + `
-      <div class="margin-unavailable">Cette ligne ne gagne pas la BackBox — le seuil affiché (${fmtEUR(r.price_to_win)}) est déjà fiable, pas besoin de sonder.</div>`;
   } else if (r.status === 'already_winning') {
     modal.innerHTML = head + `
       <div class="margin-unavailable">Vous déteniez déjà la BackBox à ${fmtEUR(r.price)} — rien à récupérer.</div>`;

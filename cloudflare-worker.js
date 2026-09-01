@@ -84,9 +84,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // décider ensuite quoi en faire (le garder, le baisser encore, le remonter).
 async function probePriceLive(listingId, market, env) {
   const before = await getCompetitor(listingId, market, env);
-  if (!before.isWinning) {
-    return { status: 'not_winning_already_reliable', original_price: before.price, price_to_win: before.priceToWin };
-  }
 
   const probePrice = round2(before.price * (1 - PROBE_DROP_PCT));
   await setPrice(listingId, market, probePrice, env);
