@@ -1012,11 +1012,15 @@ function bbIsoWeekKey(d) {
   const week = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
   return `${date.getUTCFullYear()}-S${String(week).padStart(2, '0')}`;
 }
-function bbTodayUTC() {
+// Date locale du visiteur (pas UTC) : entre minuit et l'heure du décalage
+// (ex. 0h-2h en été, Paris = UTC+2), les accesseurs UTC renvoient encore la
+// veille -> "Jour" affichait la mauvaise journée juste après minuit (bug
+// identifié le 02/09/2026).
+function bbTodayLocal() {
   const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-function bbRefDateUTC() { return state.bbRefDate || bbTodayUTC(); }
+function bbRefDateUTC() { return state.bbRefDate || bbTodayLocal(); }
 function bbPeriodMatches(dateStr, granularity) {
   const ref = bbRefDateUTC();
   if (granularity === 'day') return dateStr === ref;
@@ -1040,7 +1044,7 @@ function bbWeekValueToDate(weekValue) {
 
 function initBbDatePicker() {
   const dates = BACKBOX_HISTORY_DATA.rows.map(r => r[0].slice(0, 10)).sort();
-  const minDate = dates[0] || bbTodayUTC(), maxDate = bbTodayUTC();
+  const minDate = dates[0] || bbTodayLocal(), maxDate = bbTodayLocal();
 
   const dayInput = document.getElementById('bb-ref-date');
   const weekInput = document.getElementById('bb-ref-week');
@@ -1974,11 +1978,12 @@ function bucketLabel(key, gran) {
 }
 
 // ---------- period filter (Jour/Semaine/Mois/Année ancrés sur une date choisie au calendrier) ----------
-function todayUTC() {
+// Date locale du visiteur (pas UTC) — même correctif que bbTodayLocal, cf commentaire associé.
+function todayLocal() {
   const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-function refDateUTC() { return state.refDate || todayUTC(); }
+function refDateUTC() { return state.refDate || todayLocal(); }
 function periodMatches(dateStr, period) {
   const ref = refDateUTC();
   if (period === 'day') return dateStr === ref;
@@ -2019,7 +2024,7 @@ function weekValueToDate(weekValue) {
 // plus intuitif que de choisir un jour précis pour représenter "toute l'année" par exemple.
 function initDatePicker() {
   const dates = DATA.rows.map(r => r[0]).sort();
-  const minDate = dates[0], maxDate = todayUTC();
+  const minDate = dates[0], maxDate = todayLocal();
 
   const dayInput = document.getElementById('v-ref-date');
   const weekInput = document.getElementById('v-ref-week');
