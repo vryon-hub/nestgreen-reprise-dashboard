@@ -1569,10 +1569,10 @@ function toggleDetail(tr, r) {
       return `<tr><td>${MARKET_NAMES[m]}</td><td class="num">—</td><td class="num">${fmtEUR(price)}</td><td class="detail-status status-unknown">Statut BackBox indisponible</td></tr>`;
     }
     const probeBtn = r.id
-      ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}" data-original="${price}">Simuler -20%</button>`
+      ? `<button type="button" class="probe-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}">Simuler -20%</button>`
       : '';
     const claimBtn = (!w.win && r.id)
-      ? `<button type="button" class="probe-btn claim-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}" data-original="${price}">Récupérer la BackBox</button>`
+      ? `<button type="button" class="probe-btn claim-btn" data-listing="${r.id}" data-market="${m}" data-sku="${r.sku}" data-device="${r.device || ''}" data-grade="${r.g}">Récupérer la BackBox</button>`
       : '';
     const statusText = w.win
       ? `Vous détenez la BackBox.${probeBtn}`
@@ -1616,7 +1616,7 @@ function toggleDetail(tr, r) {
 
 // ---------- appel réseau commun aux boutons "Simuler -20%" / "Récupérer la BackBox" ----------
 async function callPriceAction(endpoint, btn, busyLabel) {
-  const { listing, market, sku, device, grade, original } = btn.dataset;
+  const { listing, market, sku, device, grade } = btn.dataset;
   const originalLabel = btn.textContent;
   btn.disabled = true;
   btn.textContent = busyLabel;
@@ -1631,7 +1631,7 @@ async function callPriceAction(endpoint, btn, busyLabel) {
       showProbeModal({ error: true, errorDetail: (data && data.error) || `HTTP ${resp.status}`, listing, sku, device, grade, market }, null);
       return;
     }
-    showProbeModal({ listing, sku, device, grade, market }, data, Number(original));
+    showProbeModal({ listing, sku, device, grade, market }, data);
   } catch (err) {
     showProbeModal({ error: true, errorDetail: String(err && err.message || err), listing, sku, device, grade, market }, null);
   } finally {
@@ -1650,7 +1650,7 @@ async function claimBackBoxAction(btn) {
   return callPriceAction('/claim-backbox', btn, 'Récupération…');
 }
 
-function showProbeModal(meta, r, originalFallback) {
+function showProbeModal(meta, r) {
   const modal = document.getElementById('margin-modal');
   const gradeLabel = DATA.gradeLabels[Number(meta.grade)] || '';
   const head = `
@@ -1671,7 +1671,7 @@ function showProbeModal(meta, r, originalFallback) {
     const winCls = r.is_winning ? 'positive' : 'negative';
     const winLabel = r.is_winning ? 'Oui, toujours gagnant' : 'Non, perdant à ce prix';
     const claimFromHere = !r.is_winning
-      ? `<button type="button" class="probe-btn claim-btn margin-claim-btn" data-listing="${meta.listing}" data-market="${meta.market}" data-sku="${meta.sku}" data-device="${meta.device || ''}" data-grade="${meta.grade}" data-original="${r.new_price}">Récupérer la BackBox avec ce nouveau prix</button>`
+      ? `<button type="button" class="probe-btn claim-btn margin-claim-btn" data-listing="${meta.listing}" data-market="${meta.market}" data-sku="${meta.sku}" data-device="${meta.device || ''}" data-grade="${meta.grade}">Récupérer la BackBox avec ce nouveau prix</button>`
       : '';
     modal.innerHTML = head + `
       <div class="margin-steps">
