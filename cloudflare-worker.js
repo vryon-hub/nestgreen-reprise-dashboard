@@ -96,7 +96,10 @@ async function probePriceLive(listingId, market, env) {
   return {
     status: 'simulated',
     original_price: before.price,
-    new_price: probePrice,
+    // after.price (prix confirmé relu chez BackMarket), pas probePrice (la valeur
+    // qu'on a envoyée) -> BackMarket arrondit parfois le prix soumis à l'euro
+    // entier selon le produit, ne jamais afficher notre calcul brut comme "le" prix.
+    new_price: after.price,
     price_to_win: after.priceToWin,
     is_winning: after.isWinning,
   };
@@ -123,7 +126,9 @@ async function claimBackBox(listingId, market, env) {
     status: after.isWinning ? 'claimed' : 'claim_failed',
     original_price: before.price,
     price_to_win: before.priceToWin,
-    new_price: newPrice,
+    // after.price (prix confirmé relu), pas newPrice (la valeur envoyée) -> même
+    // remarque que probePriceLive, BackMarket peut arrondir le prix soumis.
+    new_price: after.price,
     is_winning: after.isWinning,
     price_to_win_after: after.priceToWin,
   };
