@@ -1628,12 +1628,12 @@ async function callPriceAction(endpoint, btn, busyLabel) {
     });
     const data = await resp.json().catch(() => null);
     if (!resp.ok || !data || !data.ok) {
-      showProbeModal({ error: true, errorDetail: (data && data.error) || `HTTP ${resp.status}`, sku, device, grade, market }, null);
+      showProbeModal({ error: true, errorDetail: (data && data.error) || `HTTP ${resp.status}`, listing, sku, device, grade, market }, null);
       return;
     }
-    showProbeModal({ sku, device, grade, market }, data, Number(original));
+    showProbeModal({ listing, sku, device, grade, market }, data, Number(original));
   } catch (err) {
-    showProbeModal({ error: true, errorDetail: String(err && err.message || err), sku, device, grade, market }, null);
+    showProbeModal({ error: true, errorDetail: String(err && err.message || err), listing, sku, device, grade, market }, null);
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -1670,6 +1670,9 @@ function showProbeModal(meta, r, originalFallback) {
       <div class="margin-step"><span class="label">${label}</span><span class="value">${fmtEUR(value)}</span></div>`;
     const winCls = r.is_winning ? 'positive' : 'negative';
     const winLabel = r.is_winning ? 'Oui, toujours gagnant' : 'Non, perdant à ce prix';
+    const claimFromHere = !r.is_winning
+      ? `<button type="button" class="probe-btn claim-btn margin-claim-btn" data-listing="${meta.listing}" data-market="${meta.market}" data-sku="${meta.sku}" data-device="${meta.device || ''}" data-grade="${meta.grade}" data-original="${r.new_price}">Récupérer la BackBox avec ce nouveau prix</button>`
+      : '';
     modal.innerHTML = head + `
       <div class="margin-steps">
         ${step('Ancien prix', r.original_price)}
@@ -1680,7 +1683,14 @@ function showProbeModal(meta, r, originalFallback) {
           <span class="value" style="font-size:14px">${winLabel}</span>
         </div>
       </div>
-      <div class="margin-caveat">Le prix a été poussé à ${fmtEUR(r.new_price)} sur BackMarket (pas de retour en arrière automatique) — si "price to win" est encore égal au nouveau prix, le vrai seuil est plus bas et pas encore révélé ; sinon c'est le vrai seuil concurrent.</div>`;
+      <div class="margin-caveat">Le prix a été poussé à ${fmtEUR(r.new_price)} sur BackMarket (pas de retour en arrière automatique) — si "price to win" est encore égal au nouveau prix, le vrai seuil est plus bas et pas encore révélé ; sinon c'est le vrai seuil concurrent.</div>
+      ${claimFromHere ? `<div style="margin-top:14px">${claimFromHere}</div>` : ''}`;
+    if (claimFromHere) {
+      modal.querySelector('.margin-claim-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        claimBackBoxAction(modal.querySelector('.margin-claim-btn'));
+      });
+    }
   } else if (r.status === 'already_winning') {
     modal.innerHTML = head + `
       <div class="margin-unavailable">Vous déteniez déjà la BackBox à ${fmtEUR(r.price)} — rien à récupérer.</div>`;
