@@ -38,5 +38,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add alert_state.json
           git diff --staged --quiet && echo "Rien à committer" || git commit -m "auto: recap envoyé $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git pull --rebase origin main
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "push refusé (tentative $i) -> abandon du rebase avant retry dans 10s..."
+            git rebase --abort 2>/dev/null || true
+            sleep 10
+          done
+          echo "::error::Échec du push après 5 tentatives (conflit de rebase non résolu) — alert_state.json pas à jour (le mail est déjà parti)."
+          exit 1

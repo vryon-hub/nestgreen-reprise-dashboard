@@ -40,7 +40,10 @@ jobs:
           git add -A
           git diff --staged --quiet && echo "Rien à committer" || git commit -m "auto: refresh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           for i in 1 2 3 4 5; do
-            git pull --rebase origin main && git push && break
-            echo "push refusé (tentative $i), nouvelle tentative dans 10s..."
+            git pull --rebase origin main && git push && exit 0
+            echo "push refusé (tentative $i) -> abandon du rebase avant retry dans 10s..."
+            git rebase --abort 2>/dev/null || true
             sleep 10
           done
+          echo "::error::Échec du push après 5 tentatives (conflit de rebase non résolu) — ce cycle n'a rien mis à jour."
+          exit 1
