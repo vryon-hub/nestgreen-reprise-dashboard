@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Ajoute une ligne d'historique BackBox à backbox_history.jsonl à partir du
+Ajoute une ligne d'historique BackBox à backbox_history/<jour>.jsonl à partir du
 dashboard_data.json qui vient d'être reconstruit (un échantillon "gagné/perdu"
 + prix pour gagner + votre prix, par listing et par marché, toutes les 30 min
 via refresh_prix.sh).
@@ -26,7 +26,7 @@ PARIS = ZoneInfo("Europe/Paris")
 
 HERE = Path(__file__).parent
 DASHBOARD_DATA = HERE / "dashboard_data.json"
-HISTORY = HERE / "backbox_history.jsonl"
+HISTORY_DIR = HERE / "backbox_history"  # un fichier JSONL par jour (YYYY-MM-DD.jsonl)
 NO_PRICE_THRESHOLD = 1.0  # <= ce montant = placeholder, pas un vrai prix
 
 
@@ -52,11 +52,15 @@ def main():
     # de chaîne pour l'heure/le jour, ex: ts[:13], ts.slice(11,16)).
     now_paris = datetime.now(PARIS).replace(tzinfo=None)
     line = {"ts": now_paris.isoformat(timespec="seconds"), "w": listings}
-    with open(HISTORY, "a", encoding="utf-8") as f:
+    # Un fichier par jour : l'ancien fichier unique backbox_history.jsonl a atteint 100 Mo
+    # (limite dure de GitHub) le 11/10/2026 -> tous les pushes étaient rejetés.
+    HISTORY_DIR.mkdir(exist_ok=True)
+    day_file = HISTORY_DIR / f"{line['ts'][:10]}.jsonl"
+    with open(day_file, "a", encoding="utf-8") as f:
         f.write(json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n")
 
     print(f"Historique BackBox : +1 échantillon ({len(listings)} listings), "
-          f"{HISTORY.stat().st_size / 1024:.0f} Ko au total.")
+          f"{day_file.name} = {day_file.stat().st_size / 1024:.0f} Ko.")
 
 
 if __name__ == "__main__":

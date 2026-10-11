@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Agrège backbox_history.jsonl (un échantillon toutes les 30 min par listing
-et par marché depuis le lancement du suivi) en lignes compactes par HEURE,
+Agrège backbox_history/*.jsonl (un échantillon par cycle de 15 min par listing
+et par marché, un fichier par jour) en lignes compactes par JOUR (et non par
+heure : le dashboard n'utilise que la date de ces lignes — le détail d'un jour
+vient de backbox_raw/ — et l'agrégat horaire pesait 72 Mo, cf incident du 11/10/2026),
 pour le panneau "Historique BackBox" du dashboard Prix : % de temps gagné,
 et courbes "prix pour gagner la BackBox" vs "votre prix".
 
@@ -20,12 +22,19 @@ from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).parent
-HISTORY = HERE / "backbox_history.jsonl"
+HISTORY_DIR = HERE / "backbox_history"
 DASHBOARD_DATA = HERE / "dashboard_data.json"
 OUT = HERE / "backbox_history_data.json"
 
 MARKETS = ["DE", "ES", "FR", "IT"]
 NO_PRICE_THRESHOLD = 1.0  # <= ce montant = placeholder, pas un vrai prix
+
+
+def iter_samples(day_files):
+    for day_file in day_files:
+        for line in day_file.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                yield json.loads(line)
 
 
 def main():
@@ -36,23 +45,21 @@ def main():
     devices = sorted({d for d, _ in sku_map.values()})
     dev_idx = {d: i for i, d in enumerate(devices)}
 
-    if not HISTORY.exists():
+    day_files = sorted(HISTORY_DIR.glob("*.jsonl")) if HISTORY_DIR.exists() else []
+    if not day_files:
         out = {"devices": devices, "grades": grade_labels, "markets": MARKETS, "rows": []}
         OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        print("Pas d'historique encore (backbox_history.jsonl absent).")
+        print("Pas d'historique encore (backbox_history/ vide).")
         return
 
-    # (heure "YYYY-MM-DDTHH", deviceIdx, gradeIdx, marketIdx) ->
+    # (jour "YYYY-MM-DD", deviceIdx, gradeIdx, marketIdx) ->
     #   [samples, wins, ptw_sum, ptw_n, price_sum, price_n]
     agg = defaultdict(lambda: [0, 0, 0.0, 0, 0.0, 0])
     skipped_sku = 0
     n_lines = 0
-    for line in HISTORY.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
+    for rec in iter_samples(day_files):
         n_lines += 1
-        rec = json.loads(line)
-        hour = rec["ts"][:13]  # "YYYY-MM-DDTHH"
+        day = rec["ts"][:10]  # "YYYY-MM-DD"
         for sku, wins in rec["w"].items():
             info = sku_map.get(sku)
             if info is None:
@@ -71,7 +78,7 @@ def main():
                 # ou <= 1€ (placeholder BackMarket) -> pas un prix confirmé, on exclut.
                 if price is None or price <= NO_PRICE_THRESHOLD:
                     continue
-                key = (hour, di, gi, MARKETS.index(market))
+                key = (day, di, gi, MARKETS.index(market))
                 a = agg[key]
                 a[0] += 1
                 a[1] += win
@@ -82,11 +89,11 @@ def main():
                     a[4] += price
                     a[5] += 1
 
-    rows = [[h, di, gi, mi, s, w, round(ps, 2), pn, round(prs, 2), prn]
-            for (h, di, gi, mi), (s, w, ps, pn, prs, prn) in sorted(agg.items())]
+    rows = [[d, di, gi, mi, s, w, round(ps, 2), pn, round(prs, 2), prn]
+            for (d, di, gi, mi), (s, w, ps, pn, prs, prn) in sorted(agg.items())]
     out = {"devices": devices, "grades": grade_labels, "markets": MARKETS, "rows": rows}
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"{n_lines} cycles archivés -> {len(rows)} lignes agrégées (par heure), "
+    print(f"{n_lines} cycles archivés -> {len(rows)} lignes agrégées (par jour), "
           f"{len(devices)} appareils ({skipped_sku} échantillons SKU non mappé ignorés).")
 
 
