@@ -30,6 +30,15 @@ python3 append_backbox_history.py
 python3 build_backbox_history_data.py
 python3 build_backbox_raw_by_day.py
 
+# Rattrapage de jours passés manqués (ex: après une panne de push) : BACKFILL_DATES="2026-10-08 2026-10-09"
+# (renseigné via l'entrée backfill_dates de refresh.yml, vide en fonctionnement normal).
+for d in ${BACKFILL_DATES:-}; do
+  echo "Rattrapage du jour $d"
+  TARGET_DATE="$d" python3 fetch_today_hourly.py
+  python3 build_hourly_data.py
+  python3 merge_today_into_volume.py
+done
+
 python3 fetch_today_hourly.py
 python3 build_hourly_data.py
 python3 merge_today_into_volume.py

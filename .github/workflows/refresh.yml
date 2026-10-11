@@ -3,7 +3,12 @@ name: Refresh dashboard
 on:
   schedule:
     - cron: '*/15 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      backfill_dates:
+        description: "Jours à rattraper (YYYY-MM-DD séparés par des espaces) — vide = cycle normal"
+        required: false
+        default: ""
 
 concurrency:
   group: refresh
@@ -31,6 +36,7 @@ jobs:
           BM_API_KEY: ${{ secrets.BM_API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          BACKFILL_DATES: ${{ inputs.backfill_dates }}
         run: bash refresh_cloud.sh
 
       - name: Committer et pousser les fichiers mis à jour

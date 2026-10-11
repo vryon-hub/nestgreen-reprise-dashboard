@@ -10,7 +10,8 @@ Ne persiste AUCUNE donnée client — mêmes garanties que fetch_orders_volume.p
 
 Usage:
     export BM_API_KEY="<clé base64 user:token, avec padding ==>"
-    python3 fetch_today_hourly.py
+    python3 fetch_today_hourly.py                      # aujourd'hui
+    TARGET_DATE=2026-10-09 python3 fetch_today_hourly.py   # rattrapage d'un jour passé
 """
 
 import datetime
@@ -73,12 +74,18 @@ def main():
         print("Erreur: variable d'environnement BM_API_KEY manquante.", file=sys.stderr)
         sys.exit(1)
 
-    now_paris = datetime.datetime.now(PARIS)
-    today = now_paris.strftime("%Y-%m-%d")
+    # TARGET_DATE=YYYY-MM-DD (rattrapage d'un jour passé, cf refresh.yml / backfill_dates) ;
+    # sans elle : aujourd'hui, heure de Paris (comportement normal de chaque cycle).
+    target = os.environ.get("TARGET_DATE")
+    if target:
+        day_start = datetime.datetime.strptime(target, "%Y-%m-%d").replace(tzinfo=PARIS)
+    else:
+        day_start = datetime.datetime.now(PARIS).replace(hour=0, minute=0, second=0, microsecond=0)
+    today = day_start.strftime("%Y-%m-%d")
     # le filtre API est en UTC ; minuit local peut encore être "hier" en UTC (ex: 00h-02h
     # en été CEST) -> on interroge depuis minuit local converti en UTC pour ne rien manquer,
     # puis on filtre précisément côté client sur la date locale.
-    midnight_utc = now_paris.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(datetime.timezone.utc)
+    midnight_utc = day_start.astimezone(datetime.timezone.utc)
     query_date = midnight_utc.strftime("%Y-%m-%d")
     url = f"https://{HOST}/ws/buyback/v1/orders?creationDate={query_date}&pageSize={PAGE_SIZE}"
     records = []
