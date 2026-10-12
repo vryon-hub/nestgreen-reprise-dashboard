@@ -18,6 +18,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from recap_email import french_date, kpi_tiles
 from competitor_snapshot import freeze_snapshot
 
 PARIS = ZoneInfo("Europe/Paris")
@@ -29,18 +30,8 @@ CC = "v.ryon@nest.green"
 TODAY_HOURLY = HERE / "today_hourly.json"
 STATE_PATH = HERE / "alert_state.json"
 
-MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin",
-          "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
-DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-
-
-def french_date(d):
-    return f"{DAYS[d.weekday()]} {d.day} {MONTHS[d.month - 1]} {d.year}"
-
-
 def build_email_html(count, total_eur, d):
     date_str = french_date(d)
-    total_str = f"{total_eur:,.0f}".replace(",", " ")
     return f"""<div style="background:#FAFAFA;padding:32px 16px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E5E5E0;">
     <tr>
@@ -62,19 +53,7 @@ def build_email_html(count, total_eur, d):
     </tr>
     <tr>
       <td style="padding:20px 28px 8px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td width="50%" style="background:#F0F4F1;border-radius:10px;padding:16px 18px;">
-              <p style="margin:0;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;">Téléphones repris</p>
-              <p style="margin:6px 0 0;font-size:28px;font-weight:700;color:#242424;">{count}</p>
-            </td>
-            <td width="12"></td>
-            <td width="50%" style="background:#F0F4F1;border-radius:10px;padding:16px 18px;">
-              <p style="margin:0;font-size:11.5px;font-weight:600;color:#8B948E;text-transform:uppercase;letter-spacing:0.05em;">Total achat</p>
-              <p style="margin:6px 0 0;font-size:28px;font-weight:700;color:#242424;">{total_str}&nbsp;&euro;</p>
-            </td>
-          </tr>
-        </table>
+        {kpi_tiles(count, total_eur, 'Total achat')}
       </td>
     </tr>
     <tr>
@@ -93,20 +72,22 @@ def build_email_html(count, total_eur, d):
 </div>"""
 
 
-def send_email(subject, html, cc=CC):
+def send_email(subject, html, cc=CC, to=RECIPIENT):
+    """cc="" -> pas de copie. to/cc surchargeables (aperçus envoyés à v.ryon seul)."""
     user = os.environ["GMAIL_USER"]
     password = os.environ["GMAIL_APP_PASSWORD"]
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = user
-    msg["To"] = RECIPIENT
-    msg["Cc"] = cc
+    msg["To"] = to
+    cc_list = [addr.strip() for addr in cc.split(",") if addr.strip()]
+    if cc_list:
+        msg["Cc"] = ", ".join(cc_list)
     msg.attach(MIMEText(html, "html", "utf-8"))
-    cc_list = [addr.strip() for addr in cc.split(",")]
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
         server.login(user, password)
-        server.sendmail(user, [RECIPIENT, *cc_list], msg.as_string())
+        server.sendmail(user, [to, *cc_list], msg.as_string())
 
 
 def main():

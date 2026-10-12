@@ -1,12 +1,18 @@
-name: Daily recap email
+name: Recap emails (quotidien, hebdo, mensuel)
 
 on:
   schedule:
-    # 22:30 UTC = 00:30 heure de Paris (CEST, été). GitHub Actions ne suit pas
-    # le changement d'heure : en hiver (CET, UTC+1) ça tombera à 23:30 Paris
-    # au lieu de 00:30 -> à ajuster manuellement si besoin en octobre/mars.
-    - cron: '30 22 * * *'
-  workflow_dispatch: {}
+    # 22:30 UTC = 00:30 Paris l'été (CEST), 23:30 UTC = 00:30 Paris l'hiver (CET).
+    # On déclenche aux DEUX horaires : le premier qui tombe après minuit (Paris) envoie,
+    # l'autre est neutralisé par le contrôle de doublon (alert_state.json) -> plus
+    # d'ajustement manuel aux changements d'heure.
+    - cron: '30 22,23 * * *'
+  workflow_dispatch:
+    inputs:
+      preview:
+        description: "Aperçu envoyé à v.ryon SEUL, sans toucher à l'état : daily, weekly ou monthly — vide = envoi normal"
+        required: false
+        default: ""
 
 concurrency:
   group: daily-recap
@@ -27,10 +33,26 @@ jobs:
           python-version: '3.12'
 
       - name: Envoyer le récapitulatif de la veille
+        if: ${{ inputs.preview == '' }}
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python3 send_daily_recap.py
+
+      - name: Envoyer les récaps hebdo / mensuel (si une semaine ou un mois vient de se terminer)
+        if: ${{ !cancelled() && inputs.preview == '' }}
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python3 send_period_recap.py
+
+      - name: Envoyer un aperçu (v.ryon uniquement)
+        if: ${{ inputs.preview != '' }}
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          PREVIEW: ${{ inputs.preview }}
+        run: python3 send_period_recap.py --preview "$PREVIEW"
 
       - name: Committer l'état d'alerte si changé
         run: |
