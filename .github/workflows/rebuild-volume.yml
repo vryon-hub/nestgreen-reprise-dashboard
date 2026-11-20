@@ -1,0 +1,60 @@
+name: Reconstruire le volume avec le pays d'achat
+
+# Opération ponctuelle, lancée à la main : un seul passage sur l'API BackMarket depuis
+# `since` pour reconstruire volume_data.json (jour) et hourly_data.json (heure) AVEC le pays.
+# Même groupe de concurrence que le cycle de 15 min -> jamais deux écritures en parallèle.
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Date de début (YYYY-MM-DD)"
+        required: true
+        default: "2026-06-07"
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Installer les dépendances
+        run: pip install certifi
+
+      - name: Reconstruire jour + heure avec le pays
+        env:
+          BM_API_KEY: ${{ secrets.BM_API_KEY }}
+          SINCE: ${{ inputs.since }}
+        run: python3 rebuild_orders_by_market.py "$SINCE"
+
+      - name: Reconstruire la page
+        run: python3 build_combined_dashboard.py
+
+      - name: Committer et pousser
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet && echo "Rien à committer" || git commit -m "auto: volume reconstruit avec le pays d'achat depuis $SINCE"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "push refusé (tentative $i) -> abandon du rebase avant retry dans 10s..."
+            git rebase --abort 2>/dev/null || true
+            sleep 10
+          done
+          echo "::error::Échec du push après 5 tentatives."
+          exit 1
+        env:
+          SINCE: ${{ inputs.since }}

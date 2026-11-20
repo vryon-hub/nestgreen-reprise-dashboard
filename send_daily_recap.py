@@ -47,7 +47,8 @@ def main(preview=False):
     devices = json.loads(VOLUME_DATA.read_text(encoding="utf-8"))["devices"]
 
     by_device_idx = {}
-    for _hour, device_idx, _grade_idx, count, price_sum, _price_count in rows:
+    for row in rows:  # [heure, appareil, grade, nb, somme prix, nb prix, (pays)] -> on somme tous les pays
+        device_idx, count, price_sum = row[1], row[3], row[4]
         c, e = by_device_idx.get(device_idx, (0, 0.0))
         by_device_idx[device_idx] = (c + count, e + price_sum)
 

@@ -768,6 +768,7 @@
         <select id="v-capacity-select"></select>
       </label>
       <div class="chipset" id="v-grade-chips"></div>
+      <div class="chipset" id="v-country-chips" title="Pays d'achat (marché BackMarket où la reprise a été initiée)"></div>
       <button class="reset-btn" id="v-reset">Réinitialiser</button>
     </div>
   </section>
@@ -799,7 +800,7 @@
   <section class="panel">
     <div class="panel-head">
       <h2>Reprises initiées — période sélectionnée</h2>
-      <span class="hint">reprises dont la promesse a été créée pendant la période choisie, et où elles en sont aujourd'hui</span>
+      <span class="hint">reprises dont la promesse a été créée pendant la période choisie, et où elles en sont aujourd'hui (non filtré par pays)</span>
     </div>
     <div class="conversion-body">
       <div class="stat-tiles">
@@ -833,6 +834,7 @@
       <div class="view-toggle chipset" id="v-view-toggle">
         <button class="chip" data-view="device" aria-pressed="true">Par appareil</button>
         <button class="chip" data-view="grade">Par grade</button>
+        <button class="chip" data-view="country">Par pays</button>
       </div>
     </div>
     <div class="table-scroll">
@@ -1852,13 +1854,15 @@ renderTable();
 
 const DATA = __VOLUME_DATA_JSON__;
 const BUILT_AT = "__BUILT_AT__";
-// DATA = { devices: [name,...], grades: [name,...],
-//          rows: [[dateStr, deviceIdx, gradeIdx, count, priceSum, priceCount], ...] }
+// DATA = { devices: [name,...], grades: [name,...], markets: ["DE","ES","FR","IT"],
+//          rows: [[dateStr, deviceIdx, gradeIdx, count, priceSum, priceCount, marketIdx], ...] }
+// marketIdx = pays d'achat (index dans DATA.markets) ; absent des lignes qui n'ont pas encore été
+// reconstruites avec le pays -> ces lignes comptent partout tant qu'aucun pays n'est décoché.
 // priceCount <= count: certaines commandes (ex: annulées tôt) n'ont pas de prix connu,
 // donc le prix moyen se calcule sur priceSum/priceCount, jamais sur count.
 
 const HOURLY_DATA = __HOURLY_DATA_JSON__;
-// HOURLY_DATA = { days: { "YYYY-MM-DD": [[hour(0-23), deviceIdx, gradeIdx, count, priceSum, priceCount], ...] } }
+// HOURLY_DATA = { days: { "YYYY-MM-DD": [[hour(0-23), deviceIdx, gradeIdx, count, priceSum, priceCount, marketIdx], ...] } }
 // un jour par clé, conservé indéfiniment (pas seulement le jour de génération de la page).
 // deviceIdx/gradeIdx pointent dans DATA.devices/DATA.grades (mêmes index, un seul jeu de chips).
 // Alimente uniquement la vue "Jour" (détail heure par heure d'aujourd'hui) ; les autres
@@ -1891,12 +1895,15 @@ const GRADE_COLORS = ['g5', 'g4', 'g3', 'g2', 'g1', 'g0'];
 const GRADE_INK = ['g5-ink', 'g4-ink', 'g3-ink', 'g2-ink', 'g1-ink', 'g0-ink'];
 const fmtInt = (n) => n.toLocaleString('fr-FR');
 const fmtEUR = (n) => n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
+const COUNTRY_NAMES = { DE: 'Allemagne', ES: 'Espagne', FR: 'France', IT: 'Italie' };
+const countryName = (code) => COUNTRY_NAMES[code] || code;
 
 const state = {
   granularity: 'week',
   model: '',    // '' = tous les modèles
   capacity: '', // '' = toutes capacités
   grades: new Set(DATA.grades.map((_, i) => i)),
+  countries: new Set((DATA.markets || []).map((_, i) => i)), // pays d'achat cochés (tous par défaut)
   view: 'device',
   sortKey: 'count',
   sortDir: -1,
@@ -2078,7 +2085,10 @@ function hasHourlyForRefDate() { return Object.prototype.hasOwnProperty.call(HOU
 
 function filteredRows() {
   const devIdxs = matchingDeviceIdxs();
-  const okDeviceGrade = (r) => (devIdxs === null || devIdxs.has(r[1])) && state.grades.has(r[2]);
+  // tous les pays cochés = pas de filtre (les lignes sans pays connu restent comptées)
+  const allCountries = state.countries.size === (DATA.markets || []).length;
+  const okDeviceGrade = (r) => (devIdxs === null || devIdxs.has(r[1])) && state.grades.has(r[2])
+    && (allCountries || state.countries.has(r[6]));
   if (state.granularity === 'day' && hasHourlyForRefDate()) {
     return HOURLY_DATA.days[refDateUTC()].filter(okDeviceGrade);
   }
@@ -2197,6 +2207,19 @@ function computeDeviceTotals(rows) {
     totals.set(di, t);
   });
   return [...totals.entries()].map(([di, t]) => ({ di, name: DATA.devices[di], count: t.count, avgPrice: t.pcount ? t.sum / t.pcount : null }));
+}
+
+function computeCountryTotals(rows) {
+  const totals = new Map();
+  rows.forEach(([, , , count, sum, pcount, mi]) => {
+    const t = totals.get(mi) || { count: 0, sum: 0, pcount: 0 };
+    t.count += count; t.sum += sum; t.pcount += pcount;
+    totals.set(mi, t);
+  });
+  return [...totals.entries()].map(([mi, t]) => ({
+    name: mi == null ? 'Pays non renseigné' : countryName(DATA.markets[mi]),
+    count: t.count, avgPrice: t.pcount ? t.sum / t.pcount : null,
+  }));
 }
 
 function computeGradeTotals(rows) {
@@ -2380,9 +2403,8 @@ function renderPriceChart() {
 
 // ---------- breakdown table ----------
 function renderThead() {
-  const cols = state.view === 'device'
-    ? [{ key: 'name', label: 'Appareil' }, { key: 'count', label: 'Reprises', num: true }, { key: 'avgPrice', label: 'Prix moyen', num: true }]
-    : [{ key: 'name', label: 'Grade' }, { key: 'count', label: 'Reprises', num: true }, { key: 'avgPrice', label: 'Prix moyen', num: true }];
+  const firstCol = { device: 'Appareil', grade: 'Grade', country: "Pays d'achat" }[state.view];
+  const cols = [{ key: 'name', label: firstCol }, { key: 'count', label: 'Reprises', num: true }, { key: 'avgPrice', label: 'Prix moyen', num: true }];
   const row = document.getElementById('v-thead-row');
   row.innerHTML = cols.map(c => `<th class="${c.num ? 'num' : ''}" data-key="${c.key}">${c.label}<span class="arrow">▾</span></th>`).join('');
   row.querySelectorAll('th').forEach(th => {
@@ -2398,11 +2420,13 @@ function renderThead() {
 
 function renderTable() {
   const rows = filteredRows();
-  let items = state.view === 'device' ? computeDeviceTotals(rows) : computeGradeTotals(rows);
+  let items = state.view === 'device' ? computeDeviceTotals(rows)
+    : state.view === 'country' ? computeCountryTotals(rows) : computeGradeTotals(rows);
   const { sortKey, sortDir } = state;
   items.sort((a, b) => sortKey === 'name' ? sortDir * a.name.localeCompare(b.name) : sortDir * ((a[sortKey] ?? -1) - (b[sortKey] ?? -1)));
 
-  document.getElementById('v-table-title').textContent = state.view === 'device' ? 'Répartition par appareil' : 'Répartition par grade';
+  const VIEW_TITLE = { device: 'Répartition par appareil', grade: 'Répartition par grade', country: "Répartition par pays d'achat" };
+  document.getElementById('v-table-title').textContent = VIEW_TITLE[state.view];
 
   const tbody = document.getElementById('v-tbody');
   const emptyState = document.getElementById('v-empty-state');
@@ -2429,7 +2453,8 @@ function renderTable() {
     tbody.innerHTML = '';
     tbody.appendChild(frag);
   }
-  document.getElementById('v-table-foot').textContent = `${items.length.toLocaleString('fr-FR')} ${state.view === 'device' ? 'appareil(s)' : 'grade(s)'}`;
+  const VIEW_UNIT = { device: 'appareil(s)', grade: 'grade(s)', country: 'pays' };
+  document.getElementById('v-table-foot').textContent = `${items.length.toLocaleString('fr-FR')} ${VIEW_UNIT[state.view]}`;
 }
 
 function toggleDeviceDetail(tr, item, rows) {
@@ -2494,6 +2519,22 @@ function renderGradeChips() {
   });
 }
 
+function renderCountryChips() {
+  const el = document.getElementById('v-country-chips');
+  const markets = DATA.markets || [];
+  if (markets.length < 2) { el.style.display = 'none'; return; } // un seul pays connu : rien à filtrer
+  el.innerHTML = markets.map((code, i) => `
+    <button class="chip" data-country="${i}" aria-pressed="true">${countryName(code)}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const mi = +chip.dataset.country;
+      if (state.countries.has(mi)) { state.countries.delete(mi); chip.setAttribute('aria-pressed', 'false'); }
+      else { state.countries.add(mi); chip.setAttribute('aria-pressed', 'true'); }
+      renderAll();
+    });
+  });
+}
+
 function setGranularity(g) {
   state.granularity = g;
   document.querySelectorAll('#v-granularity-chips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.gran === g ? 'true' : 'false'));
@@ -2520,6 +2561,8 @@ document.getElementById('v-reset').addEventListener('click', () => {
   renderCapacitySelect();
   state.grades = new Set(DATA.grades.map((_, i) => i));
   document.querySelectorAll('#v-grade-chips .chip').forEach(c => c.setAttribute('aria-pressed', 'true'));
+  state.countries = new Set((DATA.markets || []).map((_, i) => i));
+  document.querySelectorAll('#v-country-chips .chip').forEach(c => c.setAttribute('aria-pressed', 'true'));
   state.refDate = null;
   setGranularity('week');
 });
@@ -2535,6 +2578,7 @@ function renderAll() {
 document.getElementById('v-meta-updated').textContent = `${DATA.devices.length.toLocaleString('fr-FR')} appareils · mis à jour le ${BUILT_AT}`;
 initDatePicker();
 renderGradeChips();
+renderCountryChips();
 renderThead();
 setGranularity('week');
 

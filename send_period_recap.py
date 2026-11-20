@@ -63,7 +63,8 @@ def aggregate(start, end):
     devices = vol["devices"]
     s, e = start.isoformat(), end.isoformat()
     per_device, days_seen = {}, set()
-    for day, di, _gi, count, price_sum, _pc in vol["rows"]:
+    for row in vol["rows"]:  # [jour, appareil, grade, nb, somme prix, nb prix, (pays)] -> on somme tous les pays
+        day, di, count, price_sum = row[0], row[1], row[3], row[4]
         if s <= day <= e:
             days_seen.add(day)
             c, v = per_device.get(di, (0, 0.0))
