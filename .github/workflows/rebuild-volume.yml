@@ -24,7 +24,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      # ref: main = dernière version AU DÉMARRAGE du job. Sans ça, GitHub extrait le commit du
+      # moment du déclenchement : un run resté en file d'attente travaillerait sur du code périmé
+      # puis entrerait en conflit au push (constaté le 20/11/2026).
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
